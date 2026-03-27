@@ -40,4 +40,40 @@ class MeasurementApplicationTests {
 		assertTrue(f1.equals(f1));
 
 	}
+
+	// ===== Inches Tests =====
+	@Test
+	void testInchesEquality_SameValue() {
+		MeasurementApplication.Inches i1 = new MeasurementApplication.Inches(12.0);
+		MeasurementApplication.Inches i2 = new MeasurementApplication.Inches(12.0);
+
+		assertEquals(i1, i2);
+	}
+
+	@Test
+	void testInchesInEquality_DifferValue() {
+		MeasurementApplication.Inches i1 = new MeasurementApplication.Inches(12.0);
+		MeasurementApplication.Inches i2 = new MeasurementApplication.Inches(10.0);
+
+		assertNotEquals(i1, i2);
+	}
+
+	@Test
+	void testInchesNullable_NullValue() {
+		MeasurementApplication.Inches i1 = new MeasurementApplication.Inches(15.0);
+		assertFalse(i1.equals(null));
+	}
+
+	@Test
+	void testInchesNullEquality_ClassComparison() {
+		MeasurementApplication.Inches i1 = new MeasurementApplication.Inches(20.0);
+		assertFalse(i1.equals("Some String"));
+	}
+
+	@Test
+	void testInchesNullEquality_SameReference() {
+		MeasurementApplication.Inches i1 = new MeasurementApplication.Inches(25.0);
+		assertTrue(i1.equals(i1));
+	}
+
 }
