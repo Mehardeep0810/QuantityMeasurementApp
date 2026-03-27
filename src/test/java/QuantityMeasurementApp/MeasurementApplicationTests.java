@@ -40,6 +40,4 @@ class MeasurementApplicationTests {
 		assertTrue(f1.equals(f1));
 
 	}
-
-
 }
