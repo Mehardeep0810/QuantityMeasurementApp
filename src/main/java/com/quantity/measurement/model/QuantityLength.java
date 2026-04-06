@@ -3,25 +3,47 @@ package com.quantity.measurement.model;
 import com.quantity.measurement.enums.LengthUnit;
 
 public class QuantityLength {
+
+    private static final double EPSILON = 1e-6;
+
     private final double value;
     private final LengthUnit unit;
 
     public QuantityLength(double value, LengthUnit unit) {
+        if (unit == null) {
+            throw new IllegalArgumentException("Unit shouldn't be null");
+        }
         this.value = value;
         this.unit = unit;
     }
 
-    private double toFeet() {
-        return unit.toFeet(value);
+    public double toConvert(LengthUnit targetUnit) {
+        return convert(this.value, this.unit, targetUnit);
+    }
+
+    public static double convert(double value, LengthUnit sourceUnit, LengthUnit targetUnit) {
+        if (sourceUnit == null || targetUnit == null) {
+            throw new IllegalArgumentException("Units shouldn't be empty!!");
+        }
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException("Invalid numeric value!");
+        }
+        double valueInFeet = sourceUnit.toFeet(value);
+        return targetUnit.fromFeet(valueInFeet);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof QuantityLength)) return false;
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
 
         QuantityLength other = (QuantityLength) obj;
-        return Double.compare(this.toFeet(), other.toFeet()) == 0;
+        double thisInFeet = this.unit.toFeet(this.value);
+        double otherInFeet = other.unit.toFeet(other.value);
+
+        return Math.abs(thisInFeet - otherInFeet) < EPSILON;
     }
 
     @Override
