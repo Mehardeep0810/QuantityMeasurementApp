@@ -4,8 +4,7 @@ import com.quantity.measurement.enums.LengthUnit;
 
 public class QuantityLength {
 
-    private static final double EPSILON = 1e-6;
-
+    private static final double epsilon = 1e-6;
     private final double value;
     private final LengthUnit unit;
 
@@ -17,20 +16,22 @@ public class QuantityLength {
         this.unit = unit;
     }
 
-    public double toConvert(LengthUnit targetUnit) {
+    public double toconvert(LengthUnit targetUnit) {
         return convert(this.value, this.unit, targetUnit);
     }
 
     public static double convert(double value, LengthUnit sourceUnit, LengthUnit targetUnit) {
         if (sourceUnit == null || targetUnit == null) {
-            throw new IllegalArgumentException("Units shouldn't be empty!!");
+            throw new IllegalArgumentException("Unit shouldn't be empty");
         }
         if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException("Invalid numeric value!");
+            throw new IllegalArgumentException("Invalid numeric value");
         }
         double valueInFeet = sourceUnit.toFeet(value);
-        return targetUnit.fromFeet(valueInFeet);
+        return targetUnit.fromfeet(valueInFeet);
     }
+
+
 
     @Override
     public boolean equals(Object obj) {
@@ -43,11 +44,6 @@ public class QuantityLength {
         double thisInFeet = this.unit.toFeet(this.value);
         double otherInFeet = other.unit.toFeet(other.value);
 
-        return Math.abs(thisInFeet - otherInFeet) < EPSILON;
-    }
-
-    @Override
-    public String toString() {
-        return value + " " + unit.name();
+        return Math.abs(thisInFeet - otherInFeet) < epsilon;
     }
 }
