@@ -60,14 +60,14 @@ class MeasurementApplicationTests {
 	// 8
 	@Test
 	void testEquality_CentimetersToInches_EquivalentValue() {
-		assertTrue(new QuantityLength(1.0, LengthUnit.CENTIMETERS)
+		assertTrue(new QuantityLength(1.0, LengthUnit.CM)
 				.equals(new QuantityLength(0.393701, LengthUnit.INCH)));
 	}
 
 	// 9
 	@Test
 	void testEquality_CentimetersToFeet_NonEquivalentValue() {
-		assertFalse(new QuantityLength(1.0, LengthUnit.CENTIMETERS)
+		assertFalse(new QuantityLength(1.0, LengthUnit.CM)
 				.equals(new QuantityLength(1.0, LengthUnit.FEET)));
 	}
 
@@ -114,14 +114,14 @@ class MeasurementApplicationTests {
 	// 15
 	@Test
 	void testEquality_CentimetersSameReference() {
-		QuantityLength q = new QuantityLength(1.0, LengthUnit.CENTIMETERS);
+		QuantityLength q = new QuantityLength(1.0, LengthUnit.CM);
 		assertTrue(q.equals(q));
 	}
 
 	// 16
 	@Test
 	void testEquality_CentimetersNullComparison() {
-		QuantityLength q = new QuantityLength(1.0, LengthUnit.CENTIMETERS);
+		QuantityLength q = new QuantityLength(1.0, LengthUnit.CM);
 		assertFalse(q.equals(null));
 	}
 
@@ -169,7 +169,7 @@ class MeasurementApplicationTests {
 	@Test
 	void testConversion_CentimetersToInches() {
 		assertEquals(1.0,
-				QuantityLength.convert(2.54, LengthUnit.CENTIMETERS, LengthUnit.INCH),
+				QuantityLength.convert(2.54, LengthUnit.CM, LengthUnit.INCH),
 				EPSILON);
 	}
 	//23
@@ -224,7 +224,7 @@ class MeasurementApplicationTests {
 	//29
 	@Test
 	void testConversion_PrecisionTolerance() {
-		double result = QuantityLength.convert(1.0, LengthUnit.CENTIMETERS, LengthUnit.INCH);
+		double result = QuantityLength.convert(1.0, LengthUnit.CM, LengthUnit.INCH);
 		assertEquals(0.393701, result, 1e-6);
 	}
 
@@ -277,12 +277,12 @@ class MeasurementApplicationTests {
 	// 6
 	@Test
 	void testAddition_CrossUnit_CentimeterPlusInch() {
-		QuantityLength q1 = new QuantityLength(2.54, LengthUnit.CENTIMETERS);
+		QuantityLength q1 = new QuantityLength(2.54, LengthUnit.CM);
 		QuantityLength q2 = new QuantityLength(1.0, LengthUnit.INCH);
 
 		QuantityLength result = q1.add(q2);
 
-		assertEquals(5.08, result.toConvert(LengthUnit.CENTIMETERS), 1e-6);
+		assertEquals(5.08, result.toConvert(LengthUnit.CM), 1e-6);
 	}
 
 	// 7
