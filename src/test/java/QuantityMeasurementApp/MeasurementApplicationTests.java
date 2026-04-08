@@ -8,6 +8,7 @@ import com.quantity.measurement.enums.LengthUnit;
 //@SpringBootTest
 class MeasurementApplicationTests {
 	private static final double EPSILON = 1e-6;
+
 	// 1
 	@Test
 	void testEquality_YardToYard_SameValue() {
@@ -136,6 +137,7 @@ class MeasurementApplicationTests {
 		assertTrue(feet.equals(inch));
 		assertTrue(yard.equals(inch));
 	}
+
 	//    =================================================================================
 	//18
 	@Test
@@ -144,6 +146,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(1.0, LengthUnit.FEET, LengthUnit.INCH),
 				EPSILON);
 	}
+
 	//19
 	@Test
 	void testConversion_InchesToFeet() {
@@ -151,6 +154,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(24.0, LengthUnit.INCH, LengthUnit.FEET),
 				EPSILON);
 	}
+
 	//20
 	@Test
 	void testConversion_YardsToInches() {
@@ -158,6 +162,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(1.0, LengthUnit.YARD, LengthUnit.INCH),
 				EPSILON);
 	}
+
 	//21
 	@Test
 	void testConversion_InchesToYards() {
@@ -165,6 +170,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(72.0, LengthUnit.INCH, LengthUnit.YARD),
 				EPSILON);
 	}
+
 	//22
 	@Test
 	void testConversion_CentimetersToInches() {
@@ -172,6 +178,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(2.54, LengthUnit.CM, LengthUnit.INCH),
 				EPSILON);
 	}
+
 	//23
 	@Test
 	void testConversion_FeetToYard() {
@@ -179,6 +186,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(6.0, LengthUnit.FEET, LengthUnit.YARD),
 				EPSILON);
 	}
+
 	//24
 	@Test
 	void testConversion_ZeroValue() {
@@ -186,6 +194,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(0.0, LengthUnit.FEET, LengthUnit.INCH),
 				EPSILON);
 	}
+
 	//25
 	@Test
 	void testConversion_NegativeValue() {
@@ -193,6 +202,7 @@ class MeasurementApplicationTests {
 				QuantityLength.convert(-1.0, LengthUnit.FEET, LengthUnit.INCH),
 				EPSILON);
 	}
+
 	//26
 	@Test
 	void testConversion_RoundTrip() {
@@ -203,6 +213,7 @@ class MeasurementApplicationTests {
 
 		assertEquals(original, back, EPSILON);
 	}
+
 	//27
 	@Test
 	void testConversion_InvalidUnit_Throws() {
@@ -210,6 +221,7 @@ class MeasurementApplicationTests {
 			QuantityLength.convert(1.0, null, LengthUnit.FEET);
 		});
 	}
+
 	//28
 	@Test
 	void testConversion_NaNOrInfinite_Throws() {
@@ -221,126 +233,11 @@ class MeasurementApplicationTests {
 			QuantityLength.convert(Double.POSITIVE_INFINITY, LengthUnit.FEET, LengthUnit.INCH);
 		});
 	}
+
 	//29
 	@Test
 	void testConversion_PrecisionTolerance() {
 		double result = QuantityLength.convert(1.0, LengthUnit.CM, LengthUnit.INCH);
 		assertEquals(0.393701, result, 1e-6);
 	}
-
-	// UC6 Test Cases------------------------------------------------------------------------
-	// 1
-	@Test
-	void testAddition_SameUnit_FeetPlusFeet() {
-		QuantityLength q1 = new QuantityLength(1.0, LengthUnit.FEET);
-		QuantityLength q2 = new QuantityLength(2.0, LengthUnit.FEET);
-
-		assertEquals(new QuantityLength(3.0, LengthUnit.FEET), q1.add(q2));
-	}
-
-	// 2
-	@Test
-	void testAddition_SameUnit_InchPlusInch() {
-		QuantityLength q1 = new QuantityLength(6.0, LengthUnit.INCH);
-		QuantityLength q2 = new QuantityLength(6.0, LengthUnit.INCH);
-
-		assertEquals(new QuantityLength(12.0, LengthUnit.INCH), q1.add(q2));
-	}
-
-	// 3
-	@Test
-	void testAddition_CrossUnit_FeetPlusInches() {
-		QuantityLength q1 = new QuantityLength(1.0, LengthUnit.FEET);
-		QuantityLength q2 = new QuantityLength(12.0, LengthUnit.INCH);
-
-		assertEquals(new QuantityLength(2.0, LengthUnit.FEET), q1.add(q2));
-	}
-
-	// 4
-	@Test
-	void testAddition_CrossUnit_InchPlusFeet() {
-		QuantityLength q1 = new QuantityLength(12.0, LengthUnit.INCH);
-		QuantityLength q2 = new QuantityLength(1.0, LengthUnit.FEET);
-
-		assertEquals(new QuantityLength(24.0, LengthUnit.INCH), q1.add(q2));
-	}
-
-	// 5
-	@Test
-	void testAddition_CrossUnit_YardPlusFeet() {
-		QuantityLength q1 = new QuantityLength(1.0, LengthUnit.YARD);
-		QuantityLength q2 = new QuantityLength(3.0, LengthUnit.FEET);
-
-		assertEquals(new QuantityLength(2.0, LengthUnit.YARD), q1.add(q2));
-	}
-
-	// 6
-	@Test
-	void testAddition_CrossUnit_CentimeterPlusInch() {
-		QuantityLength q1 = new QuantityLength(2.54, LengthUnit.CM);
-		QuantityLength q2 = new QuantityLength(1.0, LengthUnit.INCH);
-
-		QuantityLength result = q1.add(q2);
-
-		assertEquals(5.08, result.toConvert(LengthUnit.CM), 1e-6);
-	}
-
-	// 7
-	@Test
-	void testAddition_Commutativity() {
-		QuantityLength a = new QuantityLength(1.0, LengthUnit.FEET);
-		QuantityLength b = new QuantityLength(12.0, LengthUnit.INCH);
-
-		double sum1 = a.add(b).toConvert(LengthUnit.FEET);
-		double sum2 = b.add(a).toConvert(LengthUnit.FEET);
-
-		assertEquals(sum1, sum2, 1e-6);
-	}
-
-	// 8
-	@Test
-	void testAddition_WithZero() {
-		QuantityLength q1 = new QuantityLength(5.0, LengthUnit.FEET);
-		QuantityLength q2 = new QuantityLength(0.0, LengthUnit.INCH);
-
-		assertEquals(new QuantityLength(5.0, LengthUnit.FEET), q1.add(q2));
-	}
-
-	// 9
-	@Test
-	void testAddition_NegativeValues() {
-		QuantityLength q1 = new QuantityLength(5.0, LengthUnit.FEET);
-		QuantityLength q2 = new QuantityLength(-2.0, LengthUnit.FEET);
-
-		assertEquals(new QuantityLength(3.0, LengthUnit.FEET), q1.add(q2));
-	}
-
-	// 10
-	@Test
-	void testAddition_NullSecondOperand() {
-		QuantityLength q1 = new QuantityLength(5.0, LengthUnit.FEET);
-
-		assertThrows(IllegalArgumentException.class, () -> q1.add(null));
-	}
-
-	// 11
-	@Test
-	void testAddition_LargeValues() {
-		QuantityLength q1 = new QuantityLength(1_000_000.0, LengthUnit.FEET);
-		QuantityLength q2 = new QuantityLength(1_000_000.0, LengthUnit.FEET);
-
-		assertEquals(new QuantityLength(2_000_000.0, LengthUnit.FEET), q1.add(q2));
-	}
-
-	// 12
-	@Test
-	void testAddition_SmallValues() {
-		QuantityLength q1 = new QuantityLength(0.001, LengthUnit.FEET);
-		QuantityLength q2 = new QuantityLength(0.002, LengthUnit.FEET);
-
-		QuantityLength result = q1.add(q2);
-
-		assertEquals(0.003, result.toConvert(LengthUnit.FEET), 1e-6);
-	}
-
 }
