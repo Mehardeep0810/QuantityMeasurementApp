@@ -1,22 +1,31 @@
 package QuantityMeasurementApp;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.quantity.measurement.enums.LengthUnit;
 import com.quantity.measurement.model.QuantityLength;
 
 public class MeasurementApplication {
+
 	public static void main(String[] args) {
-		//SpringApplication.run(MeasurementApplication.class, args);
+		demonstrateLengthConversion();
+		demonstrateLengthEquality();
+		demonstrateLengthComparison();
+	}
 
-		QuantityLength q1 = new QuantityLength(1, LengthUnit.FEET);
-		QuantityLength q2 = new QuantityLength(12, LengthUnit.INCH);
+	public static void demonstrateLengthConversion() {
+		QuantityLength yard = new QuantityLength(1.0, LengthUnit.YARD);
+		QuantityLength inchesObj = yard.convertTo(LengthUnit.INCH);
+		System.out.println("Conversion: " + yard + " = " + inchesObj.getValue() + " " + inchesObj.getUnit().name());
+	}
 
-		System.out.println(q1 + " and " + q2 + " Equal (" + q1.equals(q2) + ")");
+	public static void demonstrateLengthEquality() {
+		QuantityLength q1 = new QuantityLength(1.0, LengthUnit.FEET);
+		QuantityLength q2 = new QuantityLength(12.0, LengthUnit.INCH);
+		System.out.println("Equality: " + q1 + " and " + q2 + " Equal? " + q1.equals(q2));
+	}
 
-		QuantityLength q3 = new QuantityLength(1, LengthUnit.INCH);
-		QuantityLength q4 = new QuantityLength(1, LengthUnit.INCH);
-
-		System.out.println(q3 + " and " + q4 + " Equal (" + q3.equals(q4) + ")");
+	public static void demonstrateLengthComparison() {
+		QuantityLength yard = new QuantityLength(1.0, LengthUnit.YARD);
+		QuantityLength feet = new QuantityLength(3.0, LengthUnit.FEET);
+		System.out.println("Comparison: " + yard + " vs " + feet + " Equal? " + yard.equals(feet));
 	}
 }
