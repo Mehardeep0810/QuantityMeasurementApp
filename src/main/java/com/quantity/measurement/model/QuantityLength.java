@@ -1,37 +1,50 @@
 package com.quantity.measurement.model;
-
 import com.quantity.measurement.enums.LengthUnit;
+public class QuantityLength{
 
-public class QuantityLength {
+    private static final double EPSILON = 1e-6;
 
-    private static final double epsilon = 1e-6;
     private final double value;
     private final LengthUnit unit;
 
     public QuantityLength(double value, LengthUnit unit) {
-        if (unit == null) {
-            throw new IllegalArgumentException("Unit shouldn't be null");
-        }
+        if(unit == null) throw new IllegalArgumentException("Unit shouldn't be null");
         this.value = value;
         this.unit = unit;
     }
-
-    public double toconvert(LengthUnit targetUnit) {
+    public double toConvert(LengthUnit targetUnit){
         return convert(this.value, this.unit, targetUnit);
     }
 
     public static double convert(double value, LengthUnit sourceUnit, LengthUnit targetUnit) {
         if (sourceUnit == null || targetUnit == null) {
-            throw new IllegalArgumentException("Unit shouldn't be empty");
+            throw new IllegalArgumentException("Units shouldn't be empty!!");
         }
-        if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException("Invalid numeric value");
+        if(!Double.isFinite(value)){
+            throw new IllegalArgumentException("Invalid numeric value!");
         }
         double valueInFeet = sourceUnit.toFeet(value);
-        return targetUnit.fromfeet(valueInFeet);
+        return targetUnit.fromFeet(valueInFeet);
     }
+    //UC6
+    public QuantityLength add(QuantityLength other) {
+        if (other == null)
+            throw new IllegalArgumentException("Other quantity cannot be null");
+        if(!Double.isFinite(value)){
+            throw new IllegalArgumentException("Invalid numeric value!");
+        }
+        double thisFeet = this.unit.toFeet(this.value);
+        double otherFeet = other.unit.toFeet(other.value);
 
+        double sumFeet = thisFeet + otherFeet;
 
+        double result = this.unit.fromFeet(sumFeet);
+
+        return new QuantityLength(result, this.unit);
+    }
+    public static QuantityLength add(QuantityLength q1, QuantityLength q2) {
+        return q1.add(q2);
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -44,6 +57,6 @@ public class QuantityLength {
         double thisInFeet = this.unit.toFeet(this.value);
         double otherInFeet = other.unit.toFeet(other.value);
 
-        return Math.abs(thisInFeet - otherInFeet) < epsilon;
+        return Math.abs(thisInFeet - otherInFeet) < EPSILON;
     }
 }
