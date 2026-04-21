@@ -1,5 +1,7 @@
 package QuantityMeasurementApp;
 
+import com.quantity.measurement.enums.WeightUnit;
+import com.quantity.measurement.model.QuantityWeight;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import com.quantity.measurement.model.QuantityLength;
@@ -656,4 +658,214 @@ class MeasurementApplicationTests {
 		assertEquals(1.0, unit.getConversionFactor());
 	}
 
+	//    =======================================UC9===================================================================
+	@Test
+	void testEquality_KilogramToKilogram_SameValue() {
+		assertTrue(new QuantityWeight(1, WeightUnit.KILOGRAM)
+				.equals(new QuantityWeight(1, WeightUnit.KILOGRAM)));
+	}
+
+	@Test
+	void testEquality_KilogramToKilogram_DifferentValue() {
+		assertFalse(new QuantityWeight(1, WeightUnit.KILOGRAM)
+				.equals(new QuantityWeight(2, WeightUnit.KILOGRAM)));
+	}
+
+	@Test
+	void testEquality_KilogramToGram_EquivalentValue() {
+		assertTrue(new QuantityWeight(1, WeightUnit.KILOGRAM)
+				.equals(new QuantityWeight(1000, WeightUnit.GRAM)));
+	}
+
+	@Test
+	void testEquality_GramToKilogram_EquivalentValue() {
+		assertTrue(new QuantityWeight(1000, WeightUnit.GRAM)
+				.equals(new QuantityWeight(1, WeightUnit.KILOGRAM)));
+	}
+
+	@Test
+	void testEquality_WeightVsLength_Incompatible() {
+		assertFalse(new QuantityWeight(1, WeightUnit.KILOGRAM)
+				.equals(new QuantityLength(1, LengthUnit.FEET)));
+	}
+
+	@Test
+	void testEquality_NullComparison() {
+		assertFalse(new QuantityWeight(1, WeightUnit.KILOGRAM)
+				.equals(null));
+	}
+
+	@Test
+	void testEquality_SameReference() {
+		QuantityWeight q = new QuantityWeight(1, WeightUnit.KILOGRAM);
+		assertTrue(q.equals(q));
+	}
+
+	@Test
+	void testEquality_NullUnit() {
+		assertThrows(IllegalArgumentException.class, () -> {
+			new QuantityWeight(1, null);
+		});
+	}
+
+	@Test
+	void testEquality_TransitiveProperty() {
+		var a = new QuantityWeight(1, WeightUnit.KILOGRAM);
+		var b = new QuantityWeight(1000, WeightUnit.GRAM);
+		var c = new QuantityWeight(2.20462262, WeightUnit.POUND);
+
+		assertTrue(a.equals(b) && b.equals(c) && a.equals(c));
+	}
+
+	@Test
+	void testEquality_ZeroValue() {
+		assertTrue(new QuantityWeight(0, WeightUnit.KILOGRAM)
+				.equals(new QuantityWeight(0, WeightUnit.GRAM)));
+	}
+
+	@Test
+	void testEquality_NegativeWeight() {
+		assertTrue(new QuantityWeight(-1, WeightUnit.KILOGRAM)
+				.equals(new QuantityWeight(-1000, WeightUnit.GRAM)));
+	}
+
+	@Test
+	void testEquality_LargeWeightValue() {
+		assertTrue(new QuantityWeight(1000, WeightUnit.KILOGRAM)
+				.equals(new QuantityWeight(1_000_000, WeightUnit.GRAM)));
+	}
+
+	@Test
+	void testEquality_SmallWeightValue() {
+		assertTrue(new QuantityWeight(0.001, WeightUnit.KILOGRAM)
+				.equals(new QuantityWeight(1, WeightUnit.GRAM)));
+	}
+
+	@Test
+	void testConversion_PoundToKilogram() {
+		assertEquals(1.0,
+				new QuantityWeight(2.20462, WeightUnit.POUND)
+						.convert(WeightUnit.KILOGRAM).getValue(),
+				1e-4);
+	}
+
+	@Test
+	void testConversion_KilogramToPound() {
+		assertEquals(2.20462,
+				new QuantityWeight(1, WeightUnit.KILOGRAM)
+						.convert(WeightUnit.POUND).getValue(),
+				1e-4);
+	}
+
+	@Test
+	void testConversion_SameUnit() {
+		assertEquals(5.0,
+				new QuantityWeight(5, WeightUnit.KILOGRAM)
+						.convert(WeightUnit.KILOGRAM).getValue(),
+				EPSILON);
+	}
+
+	@Test
+	void testConversion_ZeroValue_() {
+		assertEquals(0.0,
+				new QuantityWeight(0, WeightUnit.KILOGRAM)
+						.convert(WeightUnit.GRAM).getValue(),
+				EPSILON);
+	}
+
+	@Test
+	void testConversion_NegativeValue_() {
+		assertEquals(-1000.0,
+				new QuantityWeight(-1, WeightUnit.KILOGRAM)
+						.convert(WeightUnit.GRAM).getValue(),
+				EPSILON);
+	}
+
+	@Test
+	void testConversion_RoundTrip_() {
+		QuantityWeight original = new QuantityWeight(5, WeightUnit.KILOGRAM);
+
+		QuantityWeight result = original
+				.convert(WeightUnit.GRAM)
+				.convert(WeightUnit.KILOGRAM);
+
+		assertTrue(original.equals(result));
+	}
+
+	// ================= ADDITION =================
+
+	@Test
+	void testAddition_SameUnit_KilogramPlusKilogram() {
+		assertEquals(
+				new QuantityWeight(3, WeightUnit.KILOGRAM),
+				new QuantityWeight(1, WeightUnit.KILOGRAM)
+						.add(new QuantityWeight(2, WeightUnit.KILOGRAM))
+		);
+	}
+
+	@Test
+	void testAddition_CrossUnit_KilogramPlusGram() {
+		assertEquals(
+				new QuantityWeight(2, WeightUnit.KILOGRAM),
+				new QuantityWeight(1, WeightUnit.KILOGRAM)
+						.add(new QuantityWeight(1000, WeightUnit.GRAM))
+		);
+	}
+
+	@Test
+	void testAddition_CrossUnit_PoundPlusKilogram() {
+
+		QuantityWeight result =
+				new QuantityWeight(2.20462, WeightUnit.POUND)
+						.add(new QuantityWeight(1, WeightUnit.KILOGRAM));
+
+		QuantityWeight expected =
+				new QuantityWeight(2.20462, WeightUnit.POUND)
+						.add(new QuantityWeight(1, WeightUnit.KILOGRAM));
+
+		assertTrue(result.equals(expected));
+	}
+	@Test
+	void testAddition_ExplicitTargetUnit_Kilogram() {
+		QuantityWeight result =
+				new QuantityWeight(1, WeightUnit.KILOGRAM)
+						.add(new QuantityWeight(1000, WeightUnit.GRAM), WeightUnit.GRAM);
+
+		assertEquals(2000.0, result.getValue(), EPSILON);
+	}
+
+	@Test
+	void testAddition_Commutativity_() {
+		QuantityWeight a = new QuantityWeight(1, WeightUnit.KILOGRAM);
+		QuantityWeight b = new QuantityWeight(1000, WeightUnit.GRAM);
+
+		assertTrue(a.add(b).equals(b.add(a)));
+	}
+
+	@Test
+	void testAddition_WithZero_() {
+		assertEquals(
+				new QuantityWeight(5, WeightUnit.KILOGRAM),
+				new QuantityWeight(5, WeightUnit.KILOGRAM)
+						.add(new QuantityWeight(0, WeightUnit.GRAM))
+		);
+	}
+
+	@Test
+	void testAddition_NegativeValues_() {
+		assertEquals(
+				new QuantityWeight(3, WeightUnit.KILOGRAM),
+				new QuantityWeight(5, WeightUnit.KILOGRAM)
+						.add(new QuantityWeight(-2000, WeightUnit.GRAM))
+		);
+	}
+
+	@Test
+	void testAddition_LargeValues_() {
+		assertEquals(
+				new QuantityWeight(2_000_000, WeightUnit.KILOGRAM),
+				new QuantityWeight(1_000_000, WeightUnit.KILOGRAM)
+						.add(new QuantityWeight(1_000_000, WeightUnit.KILOGRAM))
+		);
+	}
 }
