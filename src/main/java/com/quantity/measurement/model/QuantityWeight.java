@@ -1,82 +1,77 @@
 package com.quantity.measurement.model;
 
-import com.quantity.measurement.enums.WeightUnit;
+import com.quantity.measurement.enumsimplm.WeightUnit;
 
 public class QuantityWeight {
 
-    private static final double EPSILON = 1e-6;
-
-    private final double value;
-    private final WeightUnit unit;
+    private final Quantity<WeightUnit> delegate;
 
     public QuantityWeight(double value, WeightUnit unit) {
         if (unit == null) {
             throw new IllegalArgumentException("Unit cannot be null");
         }
-        if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException("Invalid value");
-        }
-
-        this.value = value;
-        this.unit = unit;
+        this.delegate = new Quantity<>(value, unit);
     }
 
     public double getValue() {
-        return value;
+        return delegate.getValue();
     }
 
-    // Convert
+    public WeightUnit getUnit() {
+        return delegate.getUnit();
+    }
+
+    // Legacy conversion helpers
+    public double toKilogram() {
+        return delegate.convertTo(WeightUnit.KILOGRAM).getValue();
+    }
+
+    public double toGram() {
+        return delegate.convertTo(WeightUnit.GRAM).getValue();
+    }
+
+    public double toPound() {
+        return delegate.convertTo(WeightUnit.POUND).getValue();
+    }
+
+    // Conversion
     public QuantityWeight convert(WeightUnit targetUnit) {
-        double base = unit.convertToBaseUnit(value);
-        double converted = targetUnit.convertFromBaseUnit(base);
-        return new QuantityWeight(converted, targetUnit);
+        Quantity<WeightUnit> converted = delegate.convertTo(targetUnit);
+        return new QuantityWeight(converted.getValue(), converted.getUnit());
     }
 
-    // Add (implicit unit)
+    // Addition
     public QuantityWeight add(QuantityWeight other) {
-        return add(other, this.unit);
+        if (other == null) {
+            throw new IllegalArgumentException("Second operand cannot be null");
+        }
+        Quantity<WeightUnit> result = delegate.add(other.delegate, this.getUnit());
+        return new QuantityWeight(result.getValue(), result.getUnit());
     }
 
-    // Add (explicit unit)
     public QuantityWeight add(QuantityWeight other, WeightUnit targetUnit) {
         if (other == null || targetUnit == null) {
-            throw new IllegalArgumentException("Invalid operands");
+            throw new IllegalArgumentException("Operands and target unit cannot be null");
         }
-
-        double base1 = unit.convertToBaseUnit(value);
-        double base2 = other.unit.convertToBaseUnit(other.value);
-
-        double sum = base1 + base2;
-
-        return new QuantityWeight(
-                targetUnit.convertFromBaseUnit(sum),
-                targetUnit
-        );
+        Quantity<WeightUnit> result = delegate.add(other.delegate, targetUnit);
+        return new QuantityWeight(result.getValue(), result.getUnit());
     }
 
     @Override
     public boolean equals(Object obj) {
-
-        if (this == obj) return true;
-
-        // 🔥 UC9 IMPORTANT: Category safety
-        if (obj == null || this.getClass() != obj.getClass()) return false;
-
-        QuantityWeight other = (QuantityWeight) obj;
-
-        double base1 = unit.convertToBaseUnit(value);
-        double base2 = other.unit.convertToBaseUnit(other.value);
-
-        return Math.abs(base1 - base2) < EPSILON;
+        if (obj instanceof QuantityWeight other) {
+            return delegate.equals(other.delegate);
+        }
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return Double.hashCode(unit.convertToBaseUnit(value));
+        return delegate.hashCode();
     }
 
     @Override
     public String toString() {
-        return "Quantity(" + value + ", " + unit + ")";
+        return delegate.toString();
     }
 }
