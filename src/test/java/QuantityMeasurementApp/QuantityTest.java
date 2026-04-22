@@ -1,16 +1,18 @@
 package QuantityMeasurementApp;
 
-import com.quantity.measurement.enums.WeightUnit;
+import com.quantity.measurement.enumsimplm.WeightUnit;
+import com.quantity.measurement.model.Quantity;
 import com.quantity.measurement.model.QuantityWeight;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import com.quantity.measurement.model.QuantityLength;
-import com.quantity.measurement.enums.LengthUnit;
+import com.quantity.measurement.enumsimplm.LengthUnit;
 
 //@SpringBootTest
-class MeasurementApplicationTests {
+class QuantityTest {
 
 	private static final double EPSILON = 1e-6;
+
 	@Test
 	void testEquality_YardToYard_SameValue() {
 		assertTrue(new QuantityLength(1.0, LengthUnit.YARD)
@@ -196,7 +198,7 @@ class MeasurementApplicationTests {
 	}
 
 	@Test
-	void testConversion_RoundTrip() {
+	void QtestConversion_RoundTrip() {
 		double original = 5.0;
 
 		double converted = QuantityLength.convert(original, LengthUnit.FEET, LengthUnit.INCH);
@@ -302,7 +304,7 @@ class MeasurementApplicationTests {
 
 	// 8
 	@Test
-	void testAddition_WithZero() {
+	void QtestAddition_WithZero() {
 		assertEquals(
 				new QuantityLength(5.0, LengthUnit.FEET),
 				new QuantityLength(5.0, LengthUnit.FEET)
@@ -712,7 +714,7 @@ class MeasurementApplicationTests {
 	void testEquality_TransitiveProperty() {
 		var a = new QuantityWeight(1, WeightUnit.KILOGRAM);
 		var b = new QuantityWeight(1000, WeightUnit.GRAM);
-		var c = new QuantityWeight(2.20462262, WeightUnit.POUND);
+		var c = new QuantityWeight(2.20462, WeightUnit.POUND);
 
 		assertTrue(a.equals(b) && b.equals(c) && a.equals(c));
 	}
