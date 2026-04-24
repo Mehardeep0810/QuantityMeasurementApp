@@ -57,6 +57,48 @@ public class Quantity<U extends IMeasurable> {
         return new Quantity<>(targetUnit.convertFromBaseUnit(sum), targetUnit);
     }
 
+    // ===== UC12: Subtraction =====
+
+    // Subtract (implicit unit)
+    public Quantity<U> subtract(Quantity<U> other) {
+        if (other == null) {
+            throw new IllegalArgumentException("Second operand cannot be null");
+        }
+        return subtract(other, this.unit);
+    }
+
+    // Subtract (explicit target unit)
+    public Quantity<U> subtract(Quantity<U> other, U targetUnit) {
+        if (other == null || targetUnit == null) {
+            throw new IllegalArgumentException("Operands and target unit cannot be null");
+        }
+        if (!this.unit.getClass().equals(other.unit.getClass())) {
+            throw new IllegalArgumentException("Cross-category subtraction not allowed");
+        }
+        double base1 = unit.convertToBaseUnit(value);
+        double base2 = other.unit.convertToBaseUnit(other.value);
+        double diff = base1 - base2;
+        return new Quantity<>(targetUnit.convertFromBaseUnit(diff), targetUnit);
+
+    }
+
+    // ===== UC12: Division =====
+
+    public double divide(Quantity<U> other) {
+        if (other == null) {
+            throw new IllegalArgumentException("Divisor cannot be null");
+        }
+        if (!this.unit.getClass().equals(other.unit.getClass())) {
+            throw new IllegalArgumentException("Cross-category division not allowed");
+        }
+        double base1 = unit.convertToBaseUnit(value);
+        double base2 = other.unit.convertToBaseUnit(other.value);
+        if (base2 == 0.0) {
+            throw new ArithmeticException("Division by zero");
+        }
+        return base1 / base2;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
