@@ -139,7 +139,7 @@ public class QuantityGenericTest {
     }
 
     //UC11
-
+// ===== Equality tests (15) =====
 
     @Test
     void testEquality_LitreToLitre_SameValue() {
@@ -166,9 +166,9 @@ public class QuantityGenericTest {
     }
 
     @Test
-    void testEquality_LitreToGallon_EquivalentValue() {
-        assertTrue(new Quantity<>(1.0, VolumeUnit.LITRE)
-                .equals(new Quantity<>(0.264172, VolumeUnit.GALLON)));
+    void testEquality_500mlEqualsHalfLitre() {
+        assertTrue(new Quantity<>(500.0, VolumeUnit.MILLILITRE)
+                .equals(new Quantity<>(0.5, VolumeUnit.LITRE)));
     }
 
     @Test
@@ -178,38 +178,19 @@ public class QuantityGenericTest {
     }
 
     @Test
-    void testEquality_VolumeVsLength_Incompatible() {
-        assertFalse(new Quantity<>(1.0, VolumeUnit.LITRE)
-                .equals(new Quantity<>(1.0, LengthUnit.FEET)));
+    void testEquality_LitreToGallon_EquivalentValue() {
+        assertTrue(new Quantity<>(1.0, VolumeUnit.LITRE)
+                .equals(new Quantity<>(0.264172, VolumeUnit.GALLON)));
     }
 
     @Test
-    void testEquality_VolumeVsWeight_Incompatible() {
-        assertFalse(new Quantity<>(1.0, VolumeUnit.LITRE)
-                .equals(new Quantity<>(1.0, WeightUnit.KILOGRAM)));
+    void testEquality_GallonToGallon_SameValue() {
+        assertTrue(new Quantity<>(1.0, VolumeUnit.GALLON)
+                .equals(new Quantity<>(1.0, VolumeUnit.GALLON)));
     }
 
     @Test
-    void testEquality_NullComparison() {
-        assertFalse(new Quantity<>(1.0, VolumeUnit.LITRE).equals(null));
-    }
-
-    @Test
-    void testEquality_SameReference() {
-        Quantity<VolumeUnit> q = new Quantity<>(1.0, VolumeUnit.LITRE);
-        assertTrue(q.equals(q));
-    }
-
-    @Test
-    void testEquality_TransitiveProperty() {
-        Quantity<VolumeUnit> a = new Quantity<>(1.0, VolumeUnit.LITRE);
-        Quantity<VolumeUnit> b = new Quantity<>(1000.0, VolumeUnit.MILLILITRE);
-        Quantity<VolumeUnit> c = new Quantity<>(0.264172, VolumeUnit.GALLON);
-        assertTrue(a.equals(b) && b.equals(c) && a.equals(c));
-    }
-
-    @Test
-    void testEquality_ZeroValue() {
+    void testEquality_ZeroValueAcrossUnits() {
         assertTrue(new Quantity<>(0.0, VolumeUnit.LITRE)
                 .equals(new Quantity<>(0.0, VolumeUnit.MILLILITRE)));
     }
@@ -232,72 +213,98 @@ public class QuantityGenericTest {
                 .equals(new Quantity<>(1.0, VolumeUnit.MILLILITRE)));
     }
 
-    // ===== Conversion (9 tests) =====
+    @Test
+    void testEquality_VolumeVsLength_Incompatible() {
+        assertFalse(new Quantity<>(1.0, VolumeUnit.LITRE)
+                .equals(new Quantity<>(1.0, LengthUnit.FEET)));
+    }
+
+    @Test
+    void testEquality_VolumeVsWeight_Incompatible() {
+        assertFalse(new Quantity<>(1.0, VolumeUnit.LITRE)
+                .equals(new Quantity<>(1.0, WeightUnit.KILOGRAM)));
+    }
+
+    @Test
+    void testEquality_SameReference() {
+        Quantity<VolumeUnit> q = new Quantity<>(1.0, VolumeUnit.LITRE);
+        assertTrue(q.equals(q));
+    }
+
+    // ===== Conversion tests (12) =====
 
     @Test
     void testConversion_LitreToMillilitre() {
-        assertEquals(1000.0,
-                new Quantity<>(1.0, VolumeUnit.LITRE).convertTo(VolumeUnit.MILLILITRE).getValue(),
-                EPSILON);
+        Quantity<VolumeUnit> converted = new Quantity<>(1.0, VolumeUnit.LITRE).convertTo(VolumeUnit.MILLILITRE);
+        assertEquals(1000.0, converted.getValue(), EPSILON);
+        assertEquals(VolumeUnit.MILLILITRE, converted.getUnit());
     }
 
     @Test
-    void testConversion_MillilitreToLitre() {
-        assertEquals(1.0,
-                new Quantity<>(1000.0, VolumeUnit.MILLILITRE).convertTo(VolumeUnit.LITRE).getValue(),
-                EPSILON);
+    void testConversion_TwoGallonToLitre() {
+        Quantity<VolumeUnit> converted = new Quantity<>(2.0, VolumeUnit.GALLON).convertTo(VolumeUnit.LITRE);
+        assertEquals(7.57082, converted.getValue(), 1e-5);
+        assertEquals(VolumeUnit.LITRE, converted.getUnit());
     }
 
     @Test
-    void testConversion_GallonToLitre() {
-        assertEquals(3.78541,
-                new Quantity<>(1.0, VolumeUnit.GALLON).convertTo(VolumeUnit.LITRE).getValue(),
-                EPSILON);
+    void testConversion_500MillilitreToGallon() {
+        Quantity<VolumeUnit> converted = new Quantity<>(500.0, VolumeUnit.MILLILITRE).convertTo(VolumeUnit.GALLON);
+        // 500 mL = 0.5 L; 0.5 / 3.78541 ≈ 0.132086
+        assertEquals(0.132086, converted.getValue(), 1e-6);
+        assertEquals(VolumeUnit.GALLON, converted.getUnit());
     }
 
     @Test
-    void testConversion_LitreToGallon() {
-        assertEquals(1.0,
-                new Quantity<>(3.78541, VolumeUnit.LITRE).convertTo(VolumeUnit.GALLON).getValue(),
-                EPSILON);
+    void testConversion_ZeroLitreToMillilitre() {
+        Quantity<VolumeUnit> converted = new Quantity<>(0.0, VolumeUnit.LITRE).convertTo(VolumeUnit.MILLILITRE);
+        assertEquals(0.0, converted.getValue(), EPSILON);
     }
 
     @Test
-    void testConversion_MillilitreToGallon() {
-        assertEquals(0.264172,
-                new Quantity<>(1000.0, VolumeUnit.MILLILITRE).convertTo(VolumeUnit.GALLON).getValue(),
-                EPSILON);
+    void testConversion_LitreToSameUnit() {
+        Quantity<VolumeUnit> converted = new Quantity<>(1.0, VolumeUnit.LITRE).convertTo(VolumeUnit.LITRE);
+        assertEquals(1.0, converted.getValue(), EPSILON);
     }
 
     @Test
-    void testConversion_SameUnit() {
-        assertEquals(5.0,
-                new Quantity<>(5.0, VolumeUnit.LITRE).convertTo(VolumeUnit.LITRE).getValue(),
-                EPSILON);
-    }
-
-    @Test
-    void testConversion_ZeroValue() {
-        assertEquals(0.0,
-                new Quantity<>(0.0, VolumeUnit.LITRE).convertTo(VolumeUnit.MILLILITRE).getValue(),
-                EPSILON);
-    }
-
-    @Test
-    void testConversion_NegativeValue() {
-        assertEquals(-1000.0,
-                new Quantity<>(-1.0, VolumeUnit.LITRE).convertTo(VolumeUnit.MILLILITRE).getValue(),
-                EPSILON);
-    }
-
-    @Test
-    void testConversion_RoundTrip() {
-        Quantity<VolumeUnit> original = new Quantity<>(1.0, VolumeUnit.LITRE);
+    void testConversion_RoundTrip_LitreToMillilitreToLitre() {
+        Quantity<VolumeUnit> original = new Quantity<>(1.234, VolumeUnit.LITRE);
         Quantity<VolumeUnit> roundTrip = original.convertTo(VolumeUnit.MILLILITRE).convertTo(VolumeUnit.LITRE);
         assertTrue(original.equals(roundTrip));
     }
 
-    // ===== Addition (5 tests to complete 29 total) =====
+    @Test
+    void testConversion_NegativeValue() {
+        Quantity<VolumeUnit> converted = new Quantity<>(-1.0, VolumeUnit.LITRE).convertTo(VolumeUnit.MILLILITRE);
+        assertEquals(-1000.0, converted.getValue(), EPSILON);
+    }
+
+    @Test
+    void testConversion_MillilitreToLitre() {
+        Quantity<VolumeUnit> converted = new Quantity<>(1000.0, VolumeUnit.MILLILITRE).convertTo(VolumeUnit.LITRE);
+        assertEquals(1.0, converted.getValue(), EPSILON);
+    }
+
+    @Test
+    void testConversion_GallonToLitre() {
+        Quantity<VolumeUnit> converted = new Quantity<>(1.0, VolumeUnit.GALLON).convertTo(VolumeUnit.LITRE);
+        assertEquals(3.78541, converted.getValue(), 1e-6);
+    }
+
+    @Test
+    void testConversion_LitreToGallon() {
+        Quantity<VolumeUnit> converted = new Quantity<>(3.78541, VolumeUnit.LITRE).convertTo(VolumeUnit.GALLON);
+        assertEquals(1.0, converted.getValue(), 1e-6);
+    }
+
+    @Test
+    void testConversion_MillilitreToGallon() {
+        Quantity<VolumeUnit> converted = new Quantity<>(1000.0, VolumeUnit.MILLILITRE).convertTo(VolumeUnit.GALLON);
+        assertEquals(0.264172, converted.getValue(), 1e-6);
+    }
+
+    // ===== Addition tests (12) =====
 
     @Test
     void testAddition_SameUnit_LitrePlusLitre() {
@@ -308,9 +315,34 @@ public class QuantityGenericTest {
     }
 
     @Test
-    void testAddition_CrossUnit_LitrePlusMillilitre() {
+    void testAddition_LitrePlusMillilitre_ImplicitTarget() {
         Quantity<VolumeUnit> result = new Quantity<>(1.0, VolumeUnit.LITRE)
                 .add(new Quantity<>(1000.0, VolumeUnit.MILLILITRE));
+        assertEquals(2.0, result.getValue(), EPSILON);
+        assertEquals(VolumeUnit.LITRE, result.getUnit());
+    }
+
+    @Test
+    void testAddition_MillilitrePlusLitre_ImplicitTarget() {
+        Quantity<VolumeUnit> result = new Quantity<>(500.0, VolumeUnit.MILLILITRE)
+                .add(new Quantity<>(0.5, VolumeUnit.LITRE));
+        assertEquals(1000.0, result.getValue(), EPSILON);
+        assertEquals(VolumeUnit.MILLILITRE, result.getUnit());
+    }
+
+    @Test
+    void testAddition_GallonPlusLitre_ImplicitTarget() {
+        Quantity<VolumeUnit> result = new Quantity<>(2.0, VolumeUnit.GALLON)
+                .add(new Quantity<>(3.78541, VolumeUnit.LITRE));
+        // 2 gal + 1 gal = 3 gal
+        assertEquals(3.0, result.getValue(), 1e-6);
+        assertEquals(VolumeUnit.GALLON, result.getUnit());
+    }
+
+    @Test
+    void testAddition_ExplicitTargetUnit_Litre() {
+        Quantity<VolumeUnit> result = new Quantity<>(1.0, VolumeUnit.LITRE)
+                .add(new Quantity<>(1000.0, VolumeUnit.MILLILITRE), VolumeUnit.LITRE);
         assertEquals(2.0, result.getValue(), EPSILON);
         assertEquals(VolumeUnit.LITRE, result.getUnit());
     }
@@ -324,12 +356,21 @@ public class QuantityGenericTest {
     }
 
     @Test
-    void testAddition_Commutativity() {
+    void testAddition_ExplicitTargetUnit_Gallon() {
+        Quantity<VolumeUnit> result = new Quantity<>(3.78541, VolumeUnit.LITRE)
+                .add(new Quantity<>(3.78541, VolumeUnit.LITRE), VolumeUnit.GALLON);
+        assertEquals(2.0, result.getValue(), 1e-6);
+        assertEquals(VolumeUnit.GALLON, result.getUnit());
+    }
+
+    @Test
+    void testAddition_Commutativity_TargetUnitInvariant() {
         Quantity<VolumeUnit> a = new Quantity<>(1.0, VolumeUnit.LITRE);
         Quantity<VolumeUnit> b = new Quantity<>(1000.0, VolumeUnit.MILLILITRE);
-        Quantity<VolumeUnit> r1 = a.add(b, VolumeUnit.LITRE);
-        Quantity<VolumeUnit> r2 = b.add(a, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> r1 = a.add(b, VolumeUnit.MILLILITRE);
+        Quantity<VolumeUnit> r2 = b.add(a, VolumeUnit.MILLILITRE);
         assertEquals(r1.getValue(), r2.getValue(), EPSILON);
+        assertEquals(VolumeUnit.MILLILITRE, r1.getUnit());
     }
 
     @Test
@@ -337,6 +378,113 @@ public class QuantityGenericTest {
         Quantity<VolumeUnit> result = new Quantity<>(5.0, VolumeUnit.LITRE)
                 .add(new Quantity<>(0.0, VolumeUnit.MILLILITRE));
         assertEquals(5.0, result.getValue(), EPSILON);
+    }
+
+    @Test
+    void testAddition_NegativeValues() {
+        Quantity<VolumeUnit> result = new Quantity<>(5.0, VolumeUnit.LITRE)
+                .add(new Quantity<>(-2000.0, VolumeUnit.MILLILITRE));
+        assertEquals(3.0, result.getValue(), EPSILON);
+    }
+
+    @Test
+    void testAddition_LargeValues() {
+        Quantity<VolumeUnit> result = new Quantity<>(1e6, VolumeUnit.LITRE)
+                .add(new Quantity<>(1e6, VolumeUnit.LITRE));
+        assertEquals(2e6, result.getValue(), EPSILON);
+    }
+
+    @Test
+    void testAddition_SmallValues() {
+        Quantity<VolumeUnit> result = new Quantity<>(0.001, VolumeUnit.LITRE)
+                .add(new Quantity<>(0.002, VolumeUnit.LITRE));
+        assertEquals(0.003, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testAddition_Immutability() {
+        Quantity<VolumeUnit> a = new Quantity<>(1.0, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> b = new Quantity<>(1.0, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> sum = a.add(b);
+        // originals unchanged
+        assertEquals(1.0, a.getValue(), EPSILON);
+        assertEquals(1.0, b.getValue(), EPSILON);
+        // sum correct
+        assertEquals(2.0, sum.getValue(), EPSILON);
+    }
+
+    // ===== Enum constant tests (3) =====
+
+    @Test
+    void testVolumeUnitEnum_LitreConstant() {
+        assertEquals(1.0, VolumeUnit.LITRE.getConversionFactor(), EPSILON);
+    }
+
+    @Test
+    void testVolumeUnitEnum_MillilitreConstant() {
+        assertEquals(0.001, VolumeUnit.MILLILITRE.getConversionFactor(), EPSILON);
+    }
+
+    @Test
+    void testVolumeUnitEnum_GallonConstant() {
+        assertEquals(3.78541, VolumeUnit.GALLON.getConversionFactor(), 1e-6);
+    }
+
+    // ===== convertToBaseUnit / convertFromBaseUnit tests (3) =====
+
+    @Test
+    void testConvertToBaseUnit_MillilitreToLitre() {
+        double base = VolumeUnit.MILLILITRE.convertToBaseUnit(1000.0);
+        assertEquals(1.0, base, EPSILON);
+    }
+
+    @Test
+    void testConvertToBaseUnit_GallonToLitre() {
+        double base = VolumeUnit.GALLON.convertToBaseUnit(1.0);
+        assertEquals(3.78541, base, 1e-6);
+    }
+
+    @Test
+    void testConvertFromBaseUnit_LitreToMillilitre() {
+        double converted = VolumeUnit.MILLILITRE.convertFromBaseUnit(1.0);
+        assertEquals(1000.0, converted, EPSILON);
+    }
+
+    // ===== Integration / backward compatibility / scalability checks (4) =====
+
+    @Test
+    void testBackwardCompatibility_LengthAndWeightUnaffected() {
+        // Sanity check: length and weight operations still work unchanged
+        Quantity<LengthUnit> lengthSum = new Quantity<>(1.0, LengthUnit.FEET).add(new Quantity<>(12.0, LengthUnit.INCH));
+        assertEquals(2.0, lengthSum.convertTo(LengthUnit.FEET).getValue(), EPSILON);
+        Quantity<WeightUnit> weight = new Quantity<>(1.0, WeightUnit.KILOGRAM);
+        assertEquals(1000.0, weight.convertTo(WeightUnit.GRAM).getValue(), EPSILON);
+    }
+
+    @Test
+    void testGenericQuantity_VolumeOperations_Consistency() {
+        Quantity<VolumeUnit> a = new Quantity<>(1.0, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> b = new Quantity<>(1000.0, VolumeUnit.MILLILITRE);
+        assertTrue(a.equals(b));
+        Quantity<VolumeUnit> sum = a.add(b);
+        assertEquals(2.0, sum.getValue(), EPSILON);
+    }
+
+    @Test
+    void testScalability_VolumeIntegration_NoCodeChangesNeeded() {
+        Quantity<VolumeUnit> v1 = new Quantity<>(1.0, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> v2 = new Quantity<>(1.0, VolumeUnit.GALLON);
+        Quantity<VolumeUnit> v2InL = v2.convertTo(VolumeUnit.LITRE);
+        assertEquals(3.78541, v2InL.getValue(), 1e-6);
+        assertFalse(v1.equals(v2));
+    }
+
+    @Test
+    void testVolumeExamplesFromSpec() {
+        // A few example expressions from the UC11 spec
+        assertTrue(new Quantity<>(1.0, VolumeUnit.LITRE).equals(new Quantity<>(1000.0, VolumeUnit.MILLILITRE)));
+        assertEquals(2000.0, new Quantity<>(1.0, VolumeUnit.LITRE)
+                .add(new Quantity<>(1000.0, VolumeUnit.MILLILITRE), VolumeUnit.MILLILITRE).getValue(), EPSILON);
     }
 
     //UC12
