@@ -6,6 +6,10 @@ import com.quantity.measurement.enumsimplm.WeightUnit;
 import com.quantity.measurement.model.Quantity;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class QuantityGenericTest {
@@ -786,6 +790,373 @@ public class QuantityGenericTest {
         Quantity<LengthUnit> result = new Quantity<>(1.2345, LengthUnit.FEET)
                 .subtract(new Quantity<>(0.0045, LengthUnit.FEET));
         assertEquals(1.23, result.getValue(), EPSILON);
+    }
+
+    //UC13
+    // 1-3: Delegation tests (public behavior verifies delegation indirectly)
+    @Test
+    void testRefactoring_Add_DelegatesViaHelper() {
+        Quantity<LengthUnit> a = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(12.0, LengthUnit.INCH);
+        Quantity<LengthUnit> result = a.add(b);
+        assertEquals(2.0, result.getValue(), EPSILON);
+        assertEquals(LengthUnit.FEET, result.getUnit());
+    }
+
+    @Test
+    void testRefactoring_Subtract_DelegatesViaHelper() {
+        Quantity<LengthUnit> a = new Quantity<>(10.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(6.0, LengthUnit.INCH);
+        Quantity<LengthUnit> result = a.subtract(b);
+        assertEquals(9.5, result.getValue(), EPSILON);
+        assertEquals(LengthUnit.FEET, result.getUnit());
+    }
+
+    @Test
+    void testRefactoring_Divide_DelegatesViaHelper() {
+        double ratio = new Quantity<>(10.0, LengthUnit.FEET)
+                .divide(new Quantity<>(2.0, LengthUnit.FEET));
+        assertEquals(5.0, ratio, EPSILON);
+    }
+
+    // 4-7: Validation consistency tests
+    @Test
+    void testValidation_NullOperand_ConsistentAcrossOperations() {
+        Quantity<LengthUnit> a = new Quantity<>(1.0, LengthUnit.FEET);
+        assertThrows(IllegalArgumentException.class, () -> a.add(null));
+        assertThrows(IllegalArgumentException.class, () -> a.subtract(null));
+        assertThrows(IllegalArgumentException.class, () -> a.divide(null));
+    }
+
+    @Test
+    void testValidation_CrossCategory_ConsistentAcrossOperations() {
+        Quantity<LengthUnit> length = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<WeightUnit> weight = new Quantity<>(1.0, WeightUnit.KILOGRAM);
+        assertThrows(IllegalArgumentException.class, () -> length.add((Quantity) weight));
+        assertThrows(IllegalArgumentException.class, () -> length.subtract((Quantity) weight));
+        assertThrows(IllegalArgumentException.class, () -> length.divide((Quantity) weight));
+    }
+
+    @Test
+    void testValidation_FiniteValue_ConsistentAcrossOperations() {
+        Quantity<LengthUnit> finite = new Quantity<>(Double.POSITIVE_INFINITY, LengthUnit.FEET);
+        Quantity<LengthUnit> other = new Quantity<>(1.0, LengthUnit.FEET);
+        assertThrows(IllegalArgumentException.class, () -> finite.add(other));
+        assertThrows(IllegalArgumentException.class, () -> finite.subtract(other));
+        assertThrows(IllegalArgumentException.class, () -> finite.divide(other));
+    }
+
+    @Test
+    void testValidation_NullTargetUnit_AddSubtractReject() {
+        Quantity<LengthUnit> a = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(1.0, LengthUnit.FEET);
+        assertThrows(IllegalArgumentException.class, () -> a.add(b, null));
+        assertThrows(IllegalArgumentException.class, () -> a.subtract(b, null));
+    }
+
+    // 8-11: Enum operation correctness (indirect via public API and division-by-zero)
+    @Test
+    void testArithmeticOperation_Add_EnumComputation() {
+        Quantity<LengthUnit> a = new Quantity<>(7.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(3.0, LengthUnit.FEET);
+        assertEquals(10.0, a.add(b).getValue(), EPSILON);
+    }
+
+    @Test
+    void testArithmeticOperation_Subtract_EnumComputation() {
+        Quantity<LengthUnit> a = new Quantity<>(7.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(3.0, LengthUnit.FEET);
+        assertEquals(4.0, a.subtract(b).getValue(), EPSILON);
+    }
+
+    @Test
+    void testArithmeticOperation_Divide_EnumComputation() {
+        Quantity<LengthUnit> a = new Quantity<>(7.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(2.0, LengthUnit.FEET);
+        assertEquals(3.5, a.divide(b), EPSILON);
+    }
+
+    @Test
+    void testArithmeticOperation_DivideByZero_EnumThrows() {
+        Quantity<LengthUnit> a = new Quantity<>(10.0, LengthUnit.FEET);
+        Quantity<LengthUnit> zero = new Quantity<>(0.0, LengthUnit.FEET);
+        assertThrows(ArithmeticException.class, () -> a.divide(zero));
+    }
+
+    // 12-16: Helper correctness and visibility (use reflection for private helpers)
+    @Test
+    void testPerformBaseArithmetic_ConversionAndOperation() {
+        Quantity<VolumeUnit> a = new Quantity<>(1.0, VolumeUnit.LITRE); // base 1.0
+        Quantity<VolumeUnit> b = new Quantity<>(1000.0, VolumeUnit.MILLILITRE); // base 1.0
+        Quantity<VolumeUnit> sum = a.add(b); // 1 + 1 = 2 L
+        assertEquals(2.0, sum.getValue(), EPSILON);
+        assertEquals(VolumeUnit.LITRE, sum.getUnit());
+    }
+
+    @Test
+    void testHelper_BaseUnitConversion_Correct() {
+        // verify conversion via convertTo helper
+        Quantity<VolumeUnit> g = new Quantity<>(1.0, VolumeUnit.GALLON);
+        Quantity<VolumeUnit> inLitres = g.convertTo(VolumeUnit.LITRE);
+        // Accept small tolerance for conversion constants
+        assertEquals(3.78541, inLitres.getValue(), 1e-5);
+    }
+
+    @Test
+    void testHelper_ResultConversion_Correct() {
+        Quantity<VolumeUnit> a = new Quantity<>(3.78541, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> result = a.add(new Quantity<>(3.78541, VolumeUnit.LITRE), VolumeUnit.GALLON);
+        assertEquals(2.0, result.getValue(), 1e-6);
+        assertEquals(VolumeUnit.GALLON, result.getUnit());
+    }
+
+    @Test
+    void testHelper_PrivateVisibility() throws Exception {
+        Class<?> qtyClass = Quantity.class;
+        boolean hasPerform = Arrays.stream(qtyClass.getDeclaredMethods())
+                .anyMatch(m -> m.getName().equals("performBaseArithmetic"));
+        boolean hasValidate = Arrays.stream(qtyClass.getDeclaredMethods())
+                .anyMatch(m -> m.getName().equals("validateArithmeticOperands"));
+        assertTrue(hasPerform, "performBaseArithmetic should exist");
+        assertTrue(hasValidate, "validateArithmeticOperands should exist");
+
+        Method perform = null;
+        for (Method m : qtyClass.getDeclaredMethods()) {
+            if (m.getName().equals("performBaseArithmetic")) perform = m;
+        }
+        if (perform != null) {
+            assertTrue(Modifier.isPrivate(perform.getModifiers()), "performBaseArithmetic should be private");
+        }
+    }
+
+    @Test
+    void testValidation_Helper_PrivateVisibility() throws Exception {
+        Class<?> qtyClass = Quantity.class;
+        Method validate = null;
+        for (Method m : qtyClass.getDeclaredMethods()) {
+            if (m.getName().equals("validateArithmeticOperands")) validate = m;
+        }
+        if (validate != null) {
+            assertTrue(Modifier.isPrivate(validate.getModifiers()), "validateArithmeticOperands should be private");
+        }
+    }
+
+    // 17-19: UC12 behavior preserved (add/subtract/divide)
+    @Test
+    void testAdd_UC12_BehaviorPreserved() {
+        Quantity<LengthUnit> a = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(12.0, LengthUnit.INCH);
+        assertEquals(2.0, a.add(b).getValue(), EPSILON);
+    }
+
+    @Test
+    void testSubtract_UC12_BehaviorPreserved() {
+        Quantity<LengthUnit> a = new Quantity<>(10.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(6.0, LengthUnit.INCH);
+        assertEquals(9.5, a.subtract(b).getValue(), EPSILON);
+    }
+
+    @Test
+    void testDivide_UC12_BehaviorPreserved() {
+        double ratio = new Quantity<>(24.0, LengthUnit.INCH)
+                .divide(new Quantity<>(2.0, LengthUnit.FEET));
+        assertEquals(1.0, ratio, EPSILON);
+    }
+
+    // 20-22: Rounding behavior
+    @Test
+    void testRounding_AddSubtract_TwoDecimalPlaces() {
+        Quantity<LengthUnit> a = new Quantity<>(1.2345, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(0.0045, LengthUnit.FEET);
+        Quantity<LengthUnit> result = a.subtract(b);
+        assertEquals(1.23, result.getValue(), EPSILON);
+    }
+
+    @Test
+    void testRounding_Divide_NoRounding() {
+        double ratio = new Quantity<>(10.0, LengthUnit.FEET)
+                .divide(new Quantity<>(3.0, LengthUnit.FEET));
+        assertEquals(10.0 / 3.0, ratio, 1e-12);
+    }
+
+    @Test
+    void testRounding_Helper_Accuracy() {
+        Quantity<LengthUnit> a = new Quantity<>(1.2356, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(0.0, LengthUnit.FEET);
+        Quantity<LengthUnit> r = a.add(b);
+        assertEquals(1.24, r.getValue(), EPSILON);
+    }
+
+    // 23-24: Target unit handling
+    @Test
+    void testImplicitTargetUnit_AddSubtract() {
+        Quantity<VolumeUnit> a = new Quantity<>(1.0, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> b = new Quantity<>(1000.0, VolumeUnit.MILLILITRE);
+        Quantity<VolumeUnit> sum = a.add(b); // implicit target = first operand's unit (LITRE)
+        assertEquals(2.0, sum.getValue(), EPSILON);
+        assertEquals(VolumeUnit.LITRE, sum.getUnit());
+    }
+
+    @Test
+    void testExplicitTargetUnit_AddSubtract_Overrides() {
+        Quantity<VolumeUnit> a = new Quantity<>(1.0, VolumeUnit.LITRE);
+        Quantity<VolumeUnit> b = new Quantity<>(1000.0, VolumeUnit.MILLILITRE);
+        Quantity<VolumeUnit> sum = a.add(b, VolumeUnit.MILLILITRE);
+        assertEquals(2000.0, sum.getValue(), EPSILON);
+        assertEquals(VolumeUnit.MILLILITRE, sum.getUnit());
+    }
+
+    // 25-27: Immutability checks
+    @Test
+    void testImmutability_AfterAdd_ViaCentralizedHelper() {
+        Quantity<LengthUnit> a = new Quantity<>(3.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> sum = a.add(b);
+        assertEquals(3.0, a.getValue(), EPSILON);
+        assertEquals(1.0, b.getValue(), EPSILON);
+        assertEquals(4.0, sum.getValue(), EPSILON);
+    }
+
+    @Test
+    void testImmutability_AfterSubtract_ViaCentralizedHelper() {
+        Quantity<LengthUnit> a = new Quantity<>(5.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(2.0, LengthUnit.FEET);
+        Quantity<LengthUnit> res = a.subtract(b);
+        assertEquals(5.0, a.getValue(), EPSILON);
+        assertEquals(2.0, b.getValue(), EPSILON);
+        assertEquals(3.0, res.getValue(), EPSILON);
+    }
+
+    @Test
+    void testImmutability_AfterDivide_ViaCentralizedHelper() {
+        Quantity<LengthUnit> a = new Quantity<>(10.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(2.0, LengthUnit.FEET);
+        double ratio = a.divide(b);
+        assertEquals(10.0, a.getValue(), EPSILON);
+        assertEquals(2.0, b.getValue(), EPSILON);
+        assertEquals(5.0, ratio, EPSILON);
+    }
+
+    // 28: All categories sanity
+    @Test
+    void testAllOperations_AcrossAllCategories() {
+        double r1 = new Quantity<>(10.0, LengthUnit.FEET).divide(new Quantity<>(5.0, LengthUnit.FEET));
+        double r2 = new Quantity<>(10.0, VolumeUnit.LITRE).divide(new Quantity<>(5.0, VolumeUnit.LITRE));
+        double r3 = new Quantity<>(10.0, WeightUnit.KILOGRAM).divide(new Quantity<>(5.0, WeightUnit.KILOGRAM));
+        assertEquals(2.0, r1, EPSILON);
+        assertEquals(2.0, r2, EPSILON);
+        assertEquals(2.0, r3, EPSILON);
+    }
+
+    // 29-30: DRY verification via consistent behavior across operations
+    @Test
+    void testCodeDuplication_ValidationLogic_Eliminated() {
+        Quantity<LengthUnit> a = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> nan = null;
+        // construct a NaN quantity is not allowed by constructor (Option A), so use POSITIVE_INFINITY to test centralized validation
+        Quantity<LengthUnit> inf = new Quantity<>(Double.POSITIVE_INFINITY, LengthUnit.FEET);
+        Exception e1 = assertThrows(IllegalArgumentException.class, () -> a.add(inf));
+        Exception e2 = assertThrows(IllegalArgumentException.class, () -> a.subtract(inf));
+        Exception e3 = assertThrows(IllegalArgumentException.class, () -> a.divide(inf));
+        assertEquals(e1.getClass(), e2.getClass());
+        assertEquals(e2.getClass(), e3.getClass());
+    }
+
+    @Test
+    void testCodeDuplication_ConversionLogic_Eliminated() {
+        Quantity<LengthUnit> feet = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> inches = new Quantity<>(12.0, LengthUnit.INCH);
+        Quantity<LengthUnit> r1 = feet.add(inches, LengthUnit.FEET);
+        Quantity<LengthUnit> r2 = inches.add(feet, LengthUnit.FEET);
+        assertEquals(r1.getValue(), r2.getValue(), EPSILON);
+    }
+
+    // 31-33: Enum dispatch and extensibility checks
+    @Test
+    void testEnumDispatch_AllOperations_CorrectlyDispatched() throws Exception {
+        Class<?> qtyClass = Quantity.class;
+        boolean foundEnum = Arrays.stream(qtyClass.getDeclaredClasses())
+                .anyMatch(c -> c.getSimpleName().equals("ArithmeticOperation"));
+        assertTrue(foundEnum, "ArithmeticOperation enum should exist inside Quantity");
+    }
+
+    @Test
+    void testFutureOperation_MultiplicationPattern() throws Exception {
+        Class<?> qtyClass = Quantity.class;
+        Class<?> enumClass = null;
+        for (Class<?> c : qtyClass.getDeclaredClasses()) {
+            if (c.getSimpleName().equals("ArithmeticOperation")) enumClass = c;
+        }
+        assertNotNull(enumClass, "ArithmeticOperation enum must exist");
+        String[] names = Arrays.stream(enumClass.getEnumConstants()).map(Object::toString).toArray(String[]::new);
+        assertTrue(Arrays.asList(names).contains("ADD"));
+        assertTrue(Arrays.asList(names).contains("SUBTRACT"));
+        assertTrue(Arrays.asList(names).contains("DIVIDE"));
+    }
+
+    @Test
+    void testErrorMessage_Consistency_Across_Operations() {
+        Quantity<LengthUnit> a = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> inf = new Quantity<>(Double.POSITIVE_INFINITY, LengthUnit.FEET);
+        Exception exAdd = assertThrows(IllegalArgumentException.class, () -> a.add(inf));
+        Exception exSub = assertThrows(IllegalArgumentException.class, () -> a.subtract(inf));
+        Exception exDiv = assertThrows(IllegalArgumentException.class, () -> a.divide(inf));
+        assertEquals(exAdd.getClass(), exSub.getClass());
+        assertEquals(exSub.getClass(), exDiv.getClass());
+    }
+
+    // 34: Chaining operations
+    @Test
+    void testArithmetic_Chain_Operations() {
+        Quantity<LengthUnit> q1 = new Quantity<>(10.0, LengthUnit.FEET);
+        Quantity<LengthUnit> q2 = new Quantity<>(2.0, LengthUnit.FEET);
+        Quantity<LengthUnit> q3 = new Quantity<>(1.0, LengthUnit.FEET);
+        double result = q1.add(q2).subtract(q3).divide(q2); // (10+2-1)/2 = 5.5
+        assertEquals(5.5, result, EPSILON);
+    }
+
+    // 35-37: Enum constant correctness (indirect)
+    @Test
+    void testEnumConstant_ADD_CorrectlyAdds() {
+        Quantity<LengthUnit> a = new Quantity<>(7.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(3.0, LengthUnit.FEET);
+        assertEquals(10.0, a.add(b).getValue(), EPSILON);
+    }
+
+    @Test
+    void testEnumConstant_SUBTRACT_CorrectlySubtracts() {
+        Quantity<LengthUnit> a = new Quantity<>(7.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(3.0, LengthUnit.FEET);
+        assertEquals(4.0, a.subtract(b).getValue(), EPSILON);
+    }
+
+    @Test
+    void testEnumConstant_DIVIDE_CorrectlyDivides() {
+        Quantity<LengthUnit> a = new Quantity<>(7.0, LengthUnit.FEET);
+        Quantity<LengthUnit> b = new Quantity<>(2.0, LengthUnit.FEET);
+        assertEquals(3.5, a.divide(b), EPSILON);
+    }
+
+    // 38: Helper base conversion correctness (additional)
+    @Test
+    void testHelper_BaseUnitConversion_Correctness() {
+        Quantity<VolumeUnit> m = new Quantity<>(1000.0, VolumeUnit.MILLILITRE);
+        Quantity<VolumeUnit> l = m.convertTo(VolumeUnit.LITRE);
+        assertEquals(1.0, l.getValue(), EPSILON);
+    }
+
+    // 39: Unified validation behavior (Option A uses POSITIVE_INFINITY)
+    @Test
+    void testRefactoring_Validation_UnifiedBehavior() {
+        Quantity<LengthUnit> a = new Quantity<>(1.0, LengthUnit.FEET);
+        Quantity<LengthUnit> invalid = new Quantity<>(Double.POSITIVE_INFINITY, LengthUnit.FEET);
+
+        Exception eAdd = assertThrows(IllegalArgumentException.class, () -> a.add(invalid));
+        Exception eSub = assertThrows(IllegalArgumentException.class, () -> a.subtract(invalid));
+        Exception eDiv = assertThrows(IllegalArgumentException.class, () -> a.divide(invalid));
+
+        assertEquals(eAdd.getClass(), eSub.getClass());
+        assertEquals(eSub.getClass(), eDiv.getClass());
     }
 
 }
