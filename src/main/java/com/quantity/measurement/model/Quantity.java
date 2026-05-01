@@ -5,13 +5,29 @@ import com.quantity.measurement.enums.IMeasurable;
 import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 
+import com.quantity.measurement.enums.IMeasurable;
+
+import java.util.Objects;
+import java.util.function.DoubleBinaryOperator;
+
+/**
+ * Quantity (UC14-ready)
+ */
 public class Quantity<U extends IMeasurable> {
 
     private static final double EPSILON = 1e-6;
+    private static final double SMALL_ROUND_THRESHOLD = 0.01;
+    private static final int SMALL_ROUND_DECIMALS = 9;
+    private static final int LARGE_ROUND_DECIMALS = 2;
 
     private final double value;
     private final U unit;
 
+    /**
+     * Constructor: reject NaN but allow infinities.
+     * Rationale: UC13/UC14 tests expect construction with infinite values to be possible,
+     * while arithmetic operations must validate finiteness and throw.
+     */
     public Quantity(double value, U unit) {
         if (unit == null) throw new IllegalArgumentException("Unit cannot be null");
         if (Double.isNaN(value)) throw new IllegalArgumentException("Value cannot be NaN");
@@ -44,7 +60,12 @@ public class Quantity<U extends IMeasurable> {
         double compute(double a, double b) { return op.applyAsDouble(a, b); }
     }
 
-    private void validateArithmeticOperands(Quantity<U> other, U targetUnit, boolean targetRequired) {
+    /**
+     * Centralized validation for arithmetic operations.
+     * Ensures operands are non-null, same category, finite, and that target unit (if required) is valid.
+     * This is where infinities are rejected for arithmetic.
+     */
+    private void validateArithmeticOperands(Quantity<U> other, U targetUnit, boolean targetRequired, String operation) {
         if (other == null) throw new IllegalArgumentException("Operand cannot be null");
         if (other.unit == null) throw new IllegalArgumentException("Operand unit cannot be null");
         if (!unit.getClass().equals(other.unit.getClass()))
@@ -55,6 +76,11 @@ public class Quantity<U extends IMeasurable> {
             throw new IllegalArgumentException("Target unit required");
         if (targetUnit != null && !unit.getClass().equals(targetUnit.getClass()))
             throw new IllegalArgumentException("Target unit must be same category");
+
+        // UC14: validate operation support on involved units (may throw UnsupportedOperationException)
+        unit.validateOperationSupport(operation);
+        other.unit.validateOperationSupport(operation);
+        if (targetUnit != null) targetUnit.validateOperationSupport(operation);
     }
 
     private double performBaseArithmetic(Quantity<U> other, ArithmeticOperation op) {
@@ -63,49 +89,52 @@ public class Quantity<U extends IMeasurable> {
         return op.compute(base1, base2);
     }
 
-    private double roundToTwoDecimals(double v) {
-        return Math.round(v * 100.0) / 100.0;
+    private double roundToNDecimals(double v, int n) {
+        double factor = Math.pow(10.0, n);
+        return Math.round(v * factor) / factor;
     }
 
     private double applyRoundingPolicy(double converted) {
-        return Math.abs(converted) >= 0.01 ? roundToTwoDecimals(converted) : converted;
-    }
-
-    private Quantity<U> operate(Quantity<U> other,
-                                ArithmeticOperation op,
-                                U targetUnit,
-                                boolean targetRequired,
-                                boolean applyRounding) {
-        validateArithmeticOperands(other, targetUnit, targetRequired);
-        double baseResult = performBaseArithmetic(other, op);
-        U resultUnit = (targetUnit != null) ? targetUnit : this.unit;
-        double converted = resultUnit.convertFromBaseUnit(baseResult);
-        double finalValue = applyRounding ? applyRoundingPolicy(converted) : converted;
-        return new Quantity<>(finalValue, resultUnit);
+        double abs = Math.abs(converted);
+        if (abs >= SMALL_ROUND_THRESHOLD) {
+            return roundToNDecimals(converted, LARGE_ROUND_DECIMALS);
+        } else {
+            // For very small values, round to higher precision to satisfy tight tests
+            return roundToNDecimals(converted, SMALL_ROUND_DECIMALS);
+        }
     }
 
     public Quantity<U> add(Quantity<U> other) {
-        return operate(other, ArithmeticOperation.ADD, null, false, true);
+        validateArithmeticOperands(other, null, false, "ADD");
+        double baseResult = performBaseArithmetic(other, ArithmeticOperation.ADD);
+        double converted = unit.convertFromBaseUnit(baseResult);
+        return new Quantity<>(applyRoundingPolicy(converted), unit);
     }
 
     public Quantity<U> add(Quantity<U> other, U targetUnit) {
-        return operate(other, ArithmeticOperation.ADD, targetUnit, true, false);
+        validateArithmeticOperands(other, targetUnit, true, "ADD");
+        double baseResult = performBaseArithmetic(other, ArithmeticOperation.ADD);
+        double converted = targetUnit.convertFromBaseUnit(baseResult);
+        return new Quantity<>(converted, targetUnit);
     }
 
     public Quantity<U> subtract(Quantity<U> other) {
-        return operate(other, ArithmeticOperation.SUBTRACT, null, false, true);
+        validateArithmeticOperands(other, null, false, "SUBTRACT");
+        double baseResult = performBaseArithmetic(other, ArithmeticOperation.SUBTRACT);
+        double converted = unit.convertFromBaseUnit(baseResult);
+        return new Quantity<>(applyRoundingPolicy(converted), unit);
     }
 
     public Quantity<U> subtract(Quantity<U> other, U targetUnit) {
-        return operate(other, ArithmeticOperation.SUBTRACT, targetUnit, true, false);
+        validateArithmeticOperands(other, targetUnit, true, "SUBTRACT");
+        double baseResult = performBaseArithmetic(other, ArithmeticOperation.SUBTRACT);
+        double converted = targetUnit.convertFromBaseUnit(baseResult);
+        return new Quantity<>(converted, targetUnit);
     }
 
     public double divide(Quantity<U> other) {
-        validateArithmeticOperands(other, null, false);
-        double base1 = unit.convertToBaseUnit(value);
-        double base2 = other.unit.convertToBaseUnit(other.value);
-        if (Math.abs(base2) < EPSILON) throw new ArithmeticException("Division by zero");
-        return base1 / base2;
+        validateArithmeticOperands(other, null, false, "DIVIDE");
+        return performBaseArithmetic(other, ArithmeticOperation.DIVIDE);
     }
 
     @Override
@@ -122,7 +151,7 @@ public class Quantity<U extends IMeasurable> {
     @Override
     public int hashCode() {
         double base = unit.convertToBaseUnit(value);
-        long bits = Double.doubleToLongBits(roundToTwoDecimals(base));
+        long bits = Double.doubleToLongBits(roundToNDecimals(base, LARGE_ROUND_DECIMALS));
         return Objects.hash(unit.getClass(), bits);
     }
 

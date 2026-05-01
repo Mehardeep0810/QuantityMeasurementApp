@@ -3,7 +3,19 @@ package com.quantity.measurement.enums;
 public interface IMeasurable {
     double convertToBaseUnit(double value);
     double convertFromBaseUnit(double baseValue);
-    double getConversionFactor();
-    String getUnitName();
+    @FunctionalInterface
+    interface SupportsArithmetic {
+        boolean isSupported();
+    }
+    default String getUnitName() {
+        return this.getClass().getSimpleName();
+    }
+    default SupportsArithmetic supportsArithmetic() {
+        return () -> true;
+    }
+
+    default void validateOperationSupport(String operation) {
+        // no-op by default
+    }
 }
 

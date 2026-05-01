@@ -30,10 +30,10 @@ public enum VolumeUnit implements IMeasurable {
         return baseValue / toLitreFactor; // convert from litres
     }
 
-    @Override
-    public double getConversionFactor() {
-        return toLitreFactor;
-    }
+    //@Override
+    //public double getConversionFactor() {
+    //    return toLitreFactor;
+    //}
 
     @Override
     public String getUnitName() {

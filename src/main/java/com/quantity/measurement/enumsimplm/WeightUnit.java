@@ -30,10 +30,10 @@ public enum WeightUnit implements IMeasurable {
         return baseValue / toKgFactor;
     }
 
-    @Override
-    public double getConversionFactor() {
-        return toKgFactor;
-    }
+    //@Override
+    //public double getConversionFactor() {
+        //return toKgFactor;
+    //}
 
     @Override
     public String getUnitName() {

@@ -31,10 +31,10 @@ public enum LengthUnit implements IMeasurable {
         return baseValue / toFeetFactor;
     }
 
-    @Override
-    public double getConversionFactor() {
-        return toFeetFactor;
-    }
+//    @Override
+//    public double getConversionFactor() {
+//        return toFeetFactor;
+//    }
 
     @Override
     public String getUnitName() {
