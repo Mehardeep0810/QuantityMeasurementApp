@@ -1,17 +1,15 @@
 package com.quantity.measurement.model;
 
 import com.quantity.measurement.enums.IMeasurable;
-
-import java.util.Objects;
-import java.util.function.DoubleBinaryOperator;
-
-import com.quantity.measurement.enums.IMeasurable;
+import com.quantity.measurement.exception.QuantityMeasurementException;
 
 import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 
 /**
- * Quantity (UC14-ready)
+ * UC14/UC15-ready Quantity class.
+ * Supports conversion, equality, and arithmetic for linear units.
+ * Blocks arithmetic for temperature units.
  */
 public class Quantity<U extends IMeasurable> {
 
@@ -23,11 +21,6 @@ public class Quantity<U extends IMeasurable> {
     private final double value;
     private final U unit;
 
-    /**
-     * Constructor: reject NaN but allow infinities.
-     * Rationale: UC13/UC14 tests expect construction with infinite values to be possible,
-     * while arithmetic operations must validate finiteness and throw.
-     */
     public Quantity(double value, U unit) {
         if (unit == null) throw new IllegalArgumentException("Unit cannot be null");
         if (Double.isNaN(value)) throw new IllegalArgumentException("Value cannot be NaN");
@@ -38,14 +31,17 @@ public class Quantity<U extends IMeasurable> {
     public double getValue() { return value; }
     public U getUnit() { return unit; }
 
-    public Quantity<U> convertTo(U targetUnit) {
-        if (targetUnit == null) throw new IllegalArgumentException("Target unit cannot be null");
-        if (!unit.getClass().equals(targetUnit.getClass()))
+    @SuppressWarnings("unchecked")
+    public <T extends IMeasurable> Quantity<T> convertTo(T targetUnit) {
+        if (unit.getMeasurementType() != targetUnit.getMeasurementType()) {
             throw new IllegalArgumentException("Cross-category conversion not allowed");
-        double base = unit.convertToBaseUnit(value);
-        double converted = targetUnit.convertFromBaseUnit(base);
-        return new Quantity<>(converted, targetUnit);
+        }
+        double baseValue = unit.convertToBaseUnit(value);
+        double convertedValue = targetUnit.convertFromBaseUnit(baseValue);
+        return new Quantity<>(convertedValue, targetUnit);
     }
+
+
 
     private enum ArithmeticOperation {
         ADD((a, b) -> a + b),
@@ -60,24 +56,19 @@ public class Quantity<U extends IMeasurable> {
         double compute(double a, double b) { return op.applyAsDouble(a, b); }
     }
 
-    /**
-     * Centralized validation for arithmetic operations.
-     * Ensures operands are non-null, same category, finite, and that target unit (if required) is valid.
-     * This is where infinities are rejected for arithmetic.
-     */
     private void validateArithmeticOperands(Quantity<U> other, U targetUnit, boolean targetRequired, String operation) {
         if (other == null) throw new IllegalArgumentException("Operand cannot be null");
         if (other.unit == null) throw new IllegalArgumentException("Operand unit cannot be null");
-        if (!unit.getClass().equals(other.unit.getClass()))
+        if (unit.getMeasurementType() != other.unit.getMeasurementType())
             throw new IllegalArgumentException("Cross-category operation not allowed");
         if (!Double.isFinite(this.value) || !Double.isFinite(other.value))
             throw new IllegalArgumentException("Values must be finite");
         if (targetRequired && targetUnit == null)
             throw new IllegalArgumentException("Target unit required");
-        if (targetUnit != null && !unit.getClass().equals(targetUnit.getClass()))
+        if (targetUnit != null && unit.getMeasurementType() != targetUnit.getMeasurementType())
             throw new IllegalArgumentException("Target unit must be same category");
 
-        // UC14: validate operation support on involved units (may throw UnsupportedOperationException)
+        // UC14/UC15: validate operation support (temperature throws UnsupportedOperationException)
         unit.validateOperationSupport(operation);
         other.unit.validateOperationSupport(operation);
         if (targetUnit != null) targetUnit.validateOperationSupport(operation);
@@ -99,7 +90,6 @@ public class Quantity<U extends IMeasurable> {
         if (abs >= SMALL_ROUND_THRESHOLD) {
             return roundToNDecimals(converted, LARGE_ROUND_DECIMALS);
         } else {
-            // For very small values, round to higher precision to satisfy tight tests
             return roundToNDecimals(converted, SMALL_ROUND_DECIMALS);
         }
     }
@@ -137,22 +127,29 @@ public class Quantity<U extends IMeasurable> {
         return performBaseArithmetic(other, ArithmeticOperation.DIVIDE);
     }
 
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Quantity<?>)) return false;
+        if (!(obj instanceof Quantity)) return false;
+
         Quantity<?> other = (Quantity<?>) obj;
-        if (!unit.getClass().equals(other.unit.getClass())) return false;
-        double base1 = unit.convertToBaseUnit(value);
-        double base2 = ((IMeasurable) other.unit).convertToBaseUnit(other.value);
-        return Math.abs(base1 - base2) < EPSILON;
+
+        if (unit.getMeasurementType() != other.unit.getMeasurementType()) return false;
+
+        double baseThis = unit.convertToBaseUnit(value);
+        double baseOther = other.unit.convertToBaseUnit(other.value);
+
+        // Use 1e-6 tolerance instead of 1e-9
+        return Math.abs(baseThis - baseOther) < 1e-6;
     }
+
 
     @Override
     public int hashCode() {
         double base = unit.convertToBaseUnit(value);
         long bits = Double.doubleToLongBits(roundToNDecimals(base, LARGE_ROUND_DECIMALS));
-        return Objects.hash(unit.getClass(), bits);
+        return Objects.hash(unit.getMeasurementType(), bits);
     }
 
     @Override

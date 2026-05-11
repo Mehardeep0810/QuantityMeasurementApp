@@ -1,42 +1,59 @@
 package com.quantity.measurement.enumsimplm;
 
 import com.quantity.measurement.enums.IMeasurable;
+import com.quantity.measurement.dto.QuantityDTO;
 
-import java.util.function.Function;
-
+/**
+ * UC15-compliant TemperatureUnit enum.
+ * Base unit: CELSIUS
+ * Arithmetic operations (ADD, SUBTRACT, DIVIDE) are unsupported.
+ */
 public enum TemperatureUnit implements IMeasurable {
-    CELSIUS(
-            c -> c,           // to base (Celsius)
-            c -> c            // from base
-    ),
-    FAHRENHEIT(
-            f -> (f - 32) * 5.0 / 9.0,   // to base (Celsius)
-            c -> (c * 9.0 / 5.0) + 32    // from base
-    ),
-    KELVIN(
-            k -> k - 273.15,    // to base (Celsius)
-            c -> c + 273.15     // from base
-    );
 
-    private final Function<Double, Double> toBase;
-    private final Function<Double, Double> fromBase;
+    CELSIUS {
+        @Override
+        public double convertToBaseUnit(double value) {
+            return value; // Celsius as base
+        }
+        @Override
+        public double convertFromBaseUnit(double baseValue) {
+            return baseValue;
+        }
+    },
+    FAHRENHEIT {
+        @Override
+        public double convertToBaseUnit(double value) {
+            return (value - 32) * 5.0 / 9.0; // to Celsius
+        }
+        @Override
+        public double convertFromBaseUnit(double baseValue) {
+            return (baseValue * 9.0 / 5.0) + 32; // from Celsius
+        }
+    },
+    KELVIN {
+        @Override
+        public double convertToBaseUnit(double value) {
+            return value - 273.15; // to Celsius
+        }
+        @Override
+        public double convertFromBaseUnit(double baseValue) {
+            return baseValue + 273.15; // from Celsius
+        }
+    };
 
-    TemperatureUnit(Function<Double, Double> toBase, Function<Double, Double> fromBase) {
-        this.toBase = toBase;
-        this.fromBase = fromBase;
+    @Override
+    public String getUnitName() {
+        return name();
     }
 
     @Override
-    public double convertToBaseUnit(double value) {
-        return toBase.apply(value);
+    public QuantityDTO.MeasurementType getMeasurementType() {
+        return QuantityDTO.MeasurementType.TEMPERATURE;
     }
 
-    @Override
-    public double convertFromBaseUnit(double baseValue) {
-        return fromBase.apply(baseValue);
-    }
-
-    // Temperature does not support arithmetic
+    /**
+     * Temperature does not support arithmetic operations.
+     */
     @Override
     public SupportsArithmetic supportsArithmetic() {
         return () -> false;
@@ -44,8 +61,26 @@ public enum TemperatureUnit implements IMeasurable {
 
     @Override
     public void validateOperationSupport(String operation) {
-        throw new UnsupportedOperationException(
-                "Operation '" + operation + "' is not supported for Temperature measurements."
-        );
+        // Any arithmetic operation is unsupported for temperature
+        if ("ADD".equalsIgnoreCase(operation) ||
+                "SUBTRACT".equalsIgnoreCase(operation) ||
+                "DIVIDE".equalsIgnoreCase(operation)) {
+            throw new UnsupportedOperationException(
+                    "Operation '" + operation + "' is not supported for Temperature measurements."
+            );
+        }
+    }
+
+    /**
+     * Resolve a TemperatureUnit from string name.
+     */
+    public static TemperatureUnit fromString(String unitName) {
+        if (unitName == null) throw new IllegalArgumentException("Unit name cannot be null");
+        switch (unitName.trim().toUpperCase()) {
+            case "CELSIUS": return CELSIUS;
+            case "FAHRENHEIT": return FAHRENHEIT;
+            case "KELVIN": return KELVIN;
+            default: throw new IllegalArgumentException("Unknown temperature unit: " + unitName);
+        }
     }
 }

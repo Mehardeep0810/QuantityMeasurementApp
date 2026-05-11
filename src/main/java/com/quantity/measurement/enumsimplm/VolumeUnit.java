@@ -1,12 +1,17 @@
 package com.quantity.measurement.enumsimplm;
 
 import com.quantity.measurement.enums.IMeasurable;
+import com.quantity.measurement.dto.QuantityDTO;
 
+/**
+ * UC15-compliant VolumeUnit enum.
+ * Base unit: LITRE
+ */
 public enum VolumeUnit implements IMeasurable {
 
-    LITRE(1.0),          // base unit
-    MILLILITRE(0.001),   // 1 mL = 0.001 L
-    GALLON(3.78541);     // 1 US gallon = 3.78541 L
+    LITRE(1.0),                // base unit
+    MILLILITRE(0.001),         // 1 mL = 0.001 L
+    GALLON(3.78541);           // 1 US gallon = 3.78541 L
 
     private final double toLitreFactor;
 
@@ -30,13 +35,36 @@ public enum VolumeUnit implements IMeasurable {
         return baseValue / toLitreFactor; // convert from litres
     }
 
-    //@Override
-    //public double getConversionFactor() {
-    //    return toLitreFactor;
-    //}
-
     @Override
     public String getUnitName() {
         return name();
+    }
+
+    @Override
+    public QuantityDTO.MeasurementType getMeasurementType() {
+        return QuantityDTO.MeasurementType.VOLUME;
+    }
+
+    public double getConversionFactor() {
+        return toLitreFactor;
+    }
+
+    /**
+     * Resolve a VolumeUnit from string name.
+     */
+    public static VolumeUnit fromString(String unitName) {
+        if (unitName == null) throw new IllegalArgumentException("Unit name cannot be null");
+        switch (unitName.trim().toUpperCase()) {
+            case "LITRE": return LITRE;
+            case "MILLILITRE":
+            case "MILLILITER": return MILLILITRE;
+            case "GALLON": return GALLON;
+            default: throw new IllegalArgumentException("Unknown volume unit: " + unitName);
+        }
+    }
+
+    @Override
+    public void validateOperationSupport(String operation) {
+        // Volume supports arithmetic operations
     }
 }

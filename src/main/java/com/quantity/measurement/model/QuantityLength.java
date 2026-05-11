@@ -35,7 +35,7 @@ public class QuantityLength {
     }
 
     public double toCentimeter() {
-        return delegate.convertTo(LengthUnit.CENTIMETERS).getValue();
+        return delegate.convertTo(LengthUnit.CENTIMETER).getValue();
     }
 
     public double toConvert(LengthUnit target) {
