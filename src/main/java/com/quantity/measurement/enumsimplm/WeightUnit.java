@@ -1,12 +1,18 @@
 package com.quantity.measurement.enumsimplm;
 
 import com.quantity.measurement.enums.IMeasurable;
+import com.quantity.measurement.dto.QuantityDTO;
 
+/**
+ * UC15-compliant WeightUnit enum.
+ * Base unit: KILOGRAM
+ */
 public enum WeightUnit implements IMeasurable {
 
-    KILOGRAM(1.0),
-    GRAM(0.001),
-    POUND(1.0/2.20462);
+    KILOGRAM(1.0),             // base unit
+    GRAM(0.001),               // 1 gram = 0.001 kg
+    TONNE(1000.0),             // 1 tonne = 1000 kg
+    POUND(0.453592);           // 1 pound = 0.453592 kg
 
     private final double toKgFactor;
 
@@ -19,7 +25,7 @@ public enum WeightUnit implements IMeasurable {
         if (!Double.isFinite(value)) {
             throw new IllegalArgumentException("Invalid value");
         }
-        return value * toKgFactor;
+        return value * toKgFactor; // convert to kilograms
     }
 
     @Override
@@ -27,16 +33,34 @@ public enum WeightUnit implements IMeasurable {
         if (!Double.isFinite(baseValue)) {
             throw new IllegalArgumentException("Invalid value");
         }
-        return baseValue / toKgFactor;
+        return baseValue / toKgFactor; // convert from kilograms
     }
-
-    //@Override
-    //public double getConversionFactor() {
-        //return toKgFactor;
-    //}
 
     @Override
     public String getUnitName() {
-        return this.name();
+        return name();
+    }
+
+    @Override
+    public QuantityDTO.MeasurementType getMeasurementType() {
+        return QuantityDTO.MeasurementType.WEIGHT;
+    }
+
+    public double getConversionFactor() {
+        return toKgFactor;
+    }
+
+    /**
+     * Resolve a WeightUnit from string name.
+     */
+    public static WeightUnit fromString(String unitName) {
+        if (unitName == null) throw new IllegalArgumentException("Unit name cannot be null");
+        switch (unitName.trim().toUpperCase()) {
+            case "KILOGRAM": return KILOGRAM;
+            case "GRAM": return GRAM;
+            case "TONNE": return TONNE;
+            case "POUND": return POUND;
+            default: throw new IllegalArgumentException("Unknown weight unit: " + unitName);
+        }
     }
 }

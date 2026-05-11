@@ -1,10 +1,17 @@
 package QuantityMeasurementApp;
 
+import com.quantity.measurement.dto.QuantityDTO;
 import com.quantity.measurement.enumsimplm.LengthUnit;
 import com.quantity.measurement.enumsimplm.TemperatureUnit;
 import com.quantity.measurement.enumsimplm.VolumeUnit;
 import com.quantity.measurement.enumsimplm.WeightUnit;
+import com.quantity.measurement.exception.QuantityMeasurementException;
 import com.quantity.measurement.model.Quantity;
+import com.quantity.measurement.repository.QuantityMeasurementCacheRepository;
+import com.quantity.measurement.repository.QuantityMeasurementRepository;
+import com.quantity.measurement.service.QuantityMeasurementService;
+import com.quantity.measurement.serviceImpl.QuantityMeasurementServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -107,7 +114,7 @@ public class QuantityGenericTest {
     }
     @Test void testScalability_NewUnitEnumIntegration() {
         // Simulate adding VolumeUnit; here just assert existing enums work.
-        assertNotNull(LengthUnit.CENTIMETERS);
+        assertNotNull(LengthUnit.CENTIMETER);
     }
     @Test void testScalability_MultipleNewCategories() {
         assertNotNull(WeightUnit.POUND);
@@ -422,20 +429,20 @@ public class QuantityGenericTest {
 
     // ===== Enum constant tests (3) =====
 
-   // @Test
-    //void testVolumeUnitEnum_LitreConstant() {
-    //    assertEquals(1.0, VolumeUnit.LITRE.getConversionFactor(), EPSILON);
-    //}
+    @Test
+    void testVolumeUnitEnum_LitreConstant() {
+        assertEquals(1.0, VolumeUnit.LITRE.getConversionFactor(), EPSILON);
+    }
 
-    //@Test
-    //void testVolumeUnitEnum_MillilitreConstant() {
-        //assertEquals(0.001, VolumeUnit.MILLILITRE.getConversionFactor(), EPSILON);
-    //}
+    @Test
+    void testVolumeUnitEnum_MillilitreConstant() {
+        assertEquals(0.001, VolumeUnit.MILLILITRE.getConversionFactor(), EPSILON);
+    }
 
-    //@Test
-    //void testVolumeUnitEnum_GallonConstant() {
-        //assertEquals(3.78541, VolumeUnit.GALLON.getConversionFactor(), 1e-6);
-    //}
+    @Test
+    void testVolumeUnitEnum_GallonConstant() {
+        assertEquals(3.78541, VolumeUnit.GALLON.getConversionFactor(), 1e-6);
+    }
 
     // ===== convertToBaseUnit / convertFromBaseUnit tests (3) =====
 
@@ -1199,8 +1206,9 @@ public class QuantityGenericTest {
     void testTemperatureEquality_CelsiusToFahrenheit_100CEquals212F() {
         Quantity<TemperatureUnit> c = new Quantity<>(100.0, TemperatureUnit.CELSIUS);
         Quantity<TemperatureUnit> f = new Quantity<>(212.0, TemperatureUnit.FAHRENHEIT);
-        assertEquals(c, f);
+        assertTrue(c.equals(f), "100°C should equal 212°F");
     }
+
 
     // 6. Celsius to Kelvin equality (0°C = 273.15 K)
     @Test
@@ -1472,4 +1480,58 @@ public class QuantityGenericTest {
         double base = TemperatureUnit.FAHRENHEIT.convertToBaseUnit(32.0);
         assertEquals(0.0, base, EPSILON);
     }
+
+    //UC15
+    // ---------- Compare Tests ----------
+    @Test void compare_equal_feet() { assertTrue(new Quantity<>(1.0, LengthUnit.FEET).equals(new Quantity<>(1.0, LengthUnit.FEET))); }
+    @Test void compare_equal_inch() { assertTrue(new Quantity<>(12.0, LengthUnit.INCH).equals(new Quantity<>(1.0, LengthUnit.FEET))); }
+    @Test void compare_yard_to_feet() { assertTrue(new Quantity<>(1.0, LengthUnit.YARD).equals(new Quantity<>(3.0, LengthUnit.FEET))); }
+    @Test void compare_yard_to_inch() { assertTrue(new Quantity<>(1.0, LengthUnit.YARD).equals(new Quantity<>(36.0, LengthUnit.INCH))); }
+    @Test void compare_inch_to_cm() { assertTrue(new Quantity<>(1.0, LengthUnit.INCH).equals(new Quantity<>(2.54, LengthUnit.CENTIMETER))); }
+    @Test void compare_cm_to_inch() { assertTrue(new Quantity<>(2.54, LengthUnit.CENTIMETER).equals(new Quantity<>(1.0, LengthUnit.INCH))); }
+    @Test void compare_litre_to_ml() { assertTrue(new Quantity<>(1.0, VolumeUnit.LITRE).equals(new Quantity<>(1000.0, VolumeUnit.MILLILITRE))); }
+    @Test void compare_kg_to_gram() { assertTrue(new Quantity<>(1.0, WeightUnit.KILOGRAM).equals(new Quantity<>(1000.0, WeightUnit.GRAM))); }
+
+    // ---------- Convert Tests ----------
+    @Test void convert_yard_to_cm() { assertEquals(91.44, new Quantity<>(1.0, LengthUnit.YARD).convertTo(LengthUnit.CENTIMETER).getValue(), EPSILON); }
+    @Test void convert_feet_to_inch() { assertEquals(12.0, new Quantity<>(1.0, LengthUnit.FEET).convertTo(LengthUnit.INCH).getValue(), EPSILON); }
+    @Test void convert_gallon_to_litre() { assertEquals(3.78541, new Quantity<>(1.0, VolumeUnit.GALLON).convertTo(VolumeUnit.LITRE).getValue(), EPSILON); }
+    @Test void convert_ml_to_litre() { assertEquals(1.0, new Quantity<>(1000.0, VolumeUnit.MILLILITRE).convertTo(VolumeUnit.LITRE).getValue(), EPSILON); }
+    @Test void convert_kg_to_gram() { assertEquals(1000.0, new Quantity<>(1.0, WeightUnit.KILOGRAM).convertTo(WeightUnit.GRAM).getValue(), EPSILON); }
+    @Test void convert_tonne_to_kg() { assertEquals(1000.0, new Quantity<>(1.0, WeightUnit.TONNE).convertTo(WeightUnit.KILOGRAM).getValue(), EPSILON); }
+    @Test void convert_celsius_to_fahrenheit() { assertEquals(32.0, new Quantity<>(0.0, TemperatureUnit.CELSIUS).convertTo(TemperatureUnit.FAHRENHEIT).getValue(), EPSILON); }
+    @Test void convert_kelvin_to_celsius() { assertEquals(0.0, new Quantity<>(273.15, TemperatureUnit.KELVIN).convertTo(TemperatureUnit.CELSIUS).getValue(), EPSILON); }
+
+    // ---------- Add/Subtract Tests ----------
+    @Test void add_inch_and_cm() { assertEquals(2.0, new Quantity<>(1.0, LengthUnit.INCH).add(new Quantity<>(2.54, LengthUnit.CENTIMETER)).getValue(), EPSILON); }
+    @Test void add_feet_and_yard() { assertEquals(4.0, new Quantity<>(1.0, LengthUnit.FEET).add(new Quantity<>(1.0, LengthUnit.YARD), LengthUnit.FEET).getValue(), EPSILON); }
+    @Test void add_litre_and_ml() { assertEquals(1.5, new Quantity<>(1.0, VolumeUnit.LITRE).add(new Quantity<>(500.0, VolumeUnit.MILLILITRE), VolumeUnit.LITRE).getValue(), EPSILON); }
+    @Test void add_kg_and_gram() { assertEquals(1.5, new Quantity<>(1.0, WeightUnit.KILOGRAM).add(new Quantity<>(500.0, WeightUnit.GRAM), WeightUnit.KILOGRAM).getValue(), EPSILON); }
+    @Test void subtract_yard_and_feet() { assertEquals(2.0, new Quantity<>(1.0, LengthUnit.YARD).subtract(new Quantity<>(1.0, LengthUnit.FEET), LengthUnit.FEET).getValue(), EPSILON); }
+    @Test void subtract_litre_and_ml() { assertEquals(0.75, new Quantity<>(1.0, VolumeUnit.LITRE).subtract(new Quantity<>(250.0, VolumeUnit.MILLILITRE), VolumeUnit.LITRE).getValue(), EPSILON); }
+    @Test void subtract_kg_and_gram() { assertEquals(0.75, new Quantity<>(1.0, WeightUnit.KILOGRAM).subtract(new Quantity<>(250.0, WeightUnit.GRAM), WeightUnit.KILOGRAM).getValue(), EPSILON); }
+    @Test void subtract_tonne_and_kg() { assertEquals(500.0, new Quantity<>(1.0, WeightUnit.TONNE).subtract(new Quantity<>(500.0, WeightUnit.KILOGRAM), WeightUnit.KILOGRAM).getValue(), EPSILON); }
+
+    // ---------- Divide Tests ----------
+    @Test void divide_feet_by_inch() { assertEquals(12.0, new Quantity<>(1.0, LengthUnit.FEET).divide(new Quantity<>(1.0, LengthUnit.INCH)), EPSILON); }
+    @Test void divide_yard_by_feet() { assertEquals(3.0, new Quantity<>(1.0, LengthUnit.YARD).divide(new Quantity<>(1.0, LengthUnit.FEET)), EPSILON); }
+    @Test void divide_litre_by_ml() { assertEquals(1000.0, new Quantity<>(1.0, VolumeUnit.LITRE).divide(new Quantity<>(1.0, VolumeUnit.MILLILITRE)), EPSILON); }
+    @Test void divide_kg_by_gram() { assertEquals(1000.0, new Quantity<>(1.0, WeightUnit.KILOGRAM).divide(new Quantity<>(1.0, WeightUnit.GRAM)), EPSILON); }
+    @Test void divide_tonne_by_kg() { assertEquals(1000.0, new Quantity<>(1.0, WeightUnit.TONNE).divide(new Quantity<>(1.0, WeightUnit.KILOGRAM)), EPSILON); }
+    @Test void divide_by_zero_throws() { assertThrows(ArithmeticException.class, () -> new Quantity<>(1.0, LengthUnit.FEET).divide(new Quantity<>(0.0, LengthUnit.INCH))); }
+
+    // ---------- Error Tests ----------
+    @Test void compare_cross_category_throws() { assertFalse(new Quantity<>(1.0, LengthUnit.FEET).equals(new Quantity<>(1.0, VolumeUnit.LITRE))); }
+    @Test
+    void convert_cross_category_throws() {
+        Quantity<LengthUnit> length = new Quantity<>(1.0, LengthUnit.FEET);
+        assertThrows(IllegalArgumentException.class,
+                () -> length.convertTo(VolumeUnit.LITRE));
+    }
+
+    @Test void add_cross_category_throws() { assertThrows(IllegalArgumentException.class, () -> new Quantity<>(1.0, LengthUnit.FEET).add((Quantity) new Quantity<>(1.0, VolumeUnit.LITRE))); }
+    @Test void subtract_cross_category_throws() { assertThrows(IllegalArgumentException.class, () -> new Quantity<>(1.0, LengthUnit.FEET).subtract((Quantity) new Quantity<>(1.0, VolumeUnit.LITRE))); }
+    @Test void unsupported_temperature_arithmetic_throws() { assertThrows(UnsupportedOperationException.class, () -> new Quantity<>(1.0, TemperatureUnit.CELSIUS).add(new Quantity<>(1.0, TemperatureUnit.CELSIUS))); }
+    @Test void invalid_dto_throws() { assertThrows(IllegalArgumentException.class, () -> new Quantity<>(Double.NaN, LengthUnit.FEET)); }
 }
+

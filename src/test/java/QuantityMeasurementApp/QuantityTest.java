@@ -64,14 +64,14 @@ class QuantityTest {
 	// 8
 	@Test
 	void testEquality_CentimetersToInches_EquivalentValue() {
-		assertTrue(new QuantityLength(1.0, LengthUnit.CENTIMETERS)
+		assertTrue(new QuantityLength(1.0, LengthUnit.CENTIMETER)
 				.equals(new QuantityLength(0.393701, LengthUnit.INCH)));
 	}
 
 	// 9
 	@Test
 	void testEquality_CentimetersToFeet_NonEquivalentValue() {
-		assertFalse(new QuantityLength(1.0, LengthUnit.CENTIMETERS)
+		assertFalse(new QuantityLength(1.0, LengthUnit.CENTIMETER)
 				.equals(new QuantityLength(1.0, LengthUnit.FEET)));
 	}
 
@@ -118,14 +118,14 @@ class QuantityTest {
 	// 15
 	@Test
 	void testEquality_CentimetersSameReference() {
-		QuantityLength q = new QuantityLength(1.0, LengthUnit.CENTIMETERS);
+		QuantityLength q = new QuantityLength(1.0, LengthUnit.CENTIMETER);
 		assertTrue(q.equals(q));
 	}
 
 	// 16
 	@Test
 	void testEquality_CentimetersNullComparison() {
-		QuantityLength q = new QuantityLength(1.0, LengthUnit.CENTIMETERS);
+		QuantityLength q = new QuantityLength(1.0, LengthUnit.CENTIMETER);
 		assertFalse(q.equals(null));
 	}
 
@@ -172,7 +172,7 @@ class QuantityTest {
 	@Test
 	void testConversion_CentimetersToInches() {
 		assertEquals(1.0,
-				QuantityLength.convert(2.54, LengthUnit.CENTIMETERS, LengthUnit.INCH),
+				QuantityLength.convert(2.54, LengthUnit.CENTIMETER, LengthUnit.INCH),
 				EPSILON);
 	}
 
@@ -227,7 +227,7 @@ class QuantityTest {
 
 	@Test
 	void testConversion_PrecisionTolerance() {
-		double result = QuantityLength.convert(1.0, LengthUnit.CENTIMETERS, LengthUnit.INCH);
+		double result = QuantityLength.convert(1.0, LengthUnit.CENTIMETER, LengthUnit.INCH);
 		assertEquals(0.393701, result, 1e-6);
 	}
 
@@ -287,8 +287,8 @@ class QuantityTest {
 	@Test
 	void testAddition_CrossUnit_CentimeterPlusInch() {
 		assertEquals(
-				new QuantityLength(5.08, LengthUnit.CENTIMETERS),
-				new QuantityLength(2.54, LengthUnit.CENTIMETERS)
+				new QuantityLength(5.08, LengthUnit.CENTIMETER),
+				new QuantityLength(2.54, LengthUnit.CENTIMETER)
 						.add(new QuantityLength(1.0, LengthUnit.INCH))
 		);
 	}
@@ -379,10 +379,10 @@ class QuantityTest {
 
 	@Test
 	void testAddition_ExplicitTargetUnit_Centimeters() {
-		QuantityLength result = new QuantityLength(2.54, LengthUnit.CENTIMETERS)
-				.add(new QuantityLength(1.0, LengthUnit.INCH), LengthUnit.CENTIMETERS);
+		QuantityLength result = new QuantityLength(2.54, LengthUnit.CENTIMETER)
+				.add(new QuantityLength(1.0, LengthUnit.INCH), LengthUnit.CENTIMETER);
 
-		assertEquals(new QuantityLength(5.08, LengthUnit.CENTIMETERS), result);
+		assertEquals(new QuantityLength(5.08, LengthUnit.CENTIMETER), result);
 	}
 
 	@Test
@@ -454,8 +454,8 @@ class QuantityTest {
 
 	@Test
 	void testAddition_ExplicitTargetUnit_PrecisionTolerance() {
-		QuantityLength result = new QuantityLength(1.0, LengthUnit.CENTIMETERS)
-				.add(new QuantityLength(1.0, LengthUnit.CENTIMETERS), LengthUnit.INCH);
+		QuantityLength result = new QuantityLength(1.0, LengthUnit.CENTIMETER)
+				.add(new QuantityLength(1.0, LengthUnit.CENTIMETER), LengthUnit.INCH);
 
 		assertEquals(new QuantityLength(0.7874, LengthUnit.INCH), result);
 	}
@@ -520,7 +520,7 @@ class QuantityTest {
 
 	@Test
 	void testConvertToBaseUnit_CentimetersToFeet() {
-		assertEquals(1.0, LengthUnit.CENTIMETERS.convertToBaseUnit(30.48), EPSILON);
+		assertEquals(1.0, LengthUnit.CENTIMETER.convertToBaseUnit(30.48), EPSILON);
 	}
 
 	// ---------- convertFromBaseUnit TESTS ----------
@@ -542,7 +542,7 @@ class QuantityTest {
 
 	@Test
 	void testConvertFromBaseUnit_FeetToCentimeters() {
-		assertEquals(30.48, LengthUnit.CENTIMETERS.convertFromBaseUnit(1.0), EPSILON);
+		assertEquals(30.48, LengthUnit.CENTIMETER.convertFromBaseUnit(1.0), EPSILON);
 	}
 
 	// ---------- QuantityLength Equality ----------
