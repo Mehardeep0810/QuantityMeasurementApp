@@ -1,17 +1,17 @@
 package QuantityMeasurementApp;
 
-import com.quantity.measurement.dto.QuantityDTO;
-import com.quantity.measurement.entity.QuantityMeasurementEntity;
-import com.quantity.measurement.enumsimplm.LengthUnit;
-import com.quantity.measurement.enumsimplm.TemperatureUnit;
-import com.quantity.measurement.enumsimplm.VolumeUnit;
-import com.quantity.measurement.enumsimplm.WeightUnit;
-import com.quantity.measurement.model.Quantity;
-import com.quantity.measurement.repoImpl.QuantityMeasurementCacheRepository;
-import com.quantity.measurement.repository.QuantityMeasurementRepository;
-import com.quantity.measurement.serviceImpl.QuantityMeasurementServiceImpl;
-import com.quantity.measurement.dto.QuantityDTO.Unit;
-import com.quantity.measurement.dto.QuantityDTO.MeasurementType;
+import com.app.quantitymeasurement.dto.QuantityDTO;
+import com.app.quantitymeasurement.entity.QuantityMeasurementEntity;
+import com.app.quantitymeasurement.enumsimplm.LengthUnit;
+import com.app.quantitymeasurement.enumsimplm.TemperatureUnit;
+import com.app.quantitymeasurement.enumsimplm.VolumeUnit;
+import com.app.quantitymeasurement.enumsimplm.WeightUnit;
+import com.app.quantitymeasurement.model.Quantity;
+import com.app.quantitymeasurement.repoImpl.QuantityMeasurementCacheRepository;
+import com.app.quantitymeasurement.repository.QuantityMeasurementRepository;
+import com.app.quantitymeasurement.serviceImpl.QuantityMeasurementServiceImpl;
+import com.app.quantitymeasurement.dto.QuantityDTO.Unit;
+import com.app.quantitymeasurement.dto.QuantityDTO.MeasurementType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
