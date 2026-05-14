@@ -1,10 +1,10 @@
-package com.quantity.measurement.enums;
+package com.app.quantitymeasurement.enums;
 
-import com.quantity.measurement.dto.QuantityDTO;
-import com.quantity.measurement.enumsimplm.LengthUnit;
-import com.quantity.measurement.enumsimplm.TemperatureUnit;
-import com.quantity.measurement.enumsimplm.VolumeUnit;
-import com.quantity.measurement.enumsimplm.WeightUnit;
+import com.app.quantitymeasurement.dto.QuantityDTO;
+import com.app.quantitymeasurement.enumsimplm.LengthUnit;
+import com.app.quantitymeasurement.enumsimplm.TemperatureUnit;
+import com.app.quantitymeasurement.enumsimplm.VolumeUnit;
+import com.app.quantitymeasurement.enumsimplm.WeightUnit;
 
 public interface IMeasurable {
     double convertToBaseUnit(double value);

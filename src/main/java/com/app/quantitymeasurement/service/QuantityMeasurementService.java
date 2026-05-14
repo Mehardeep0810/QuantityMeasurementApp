@@ -1,7 +1,7 @@
-package com.quantity.measurement.service;
+package com.app.quantitymeasurement.service;
 
-import com.quantity.measurement.dto.QuantityDTO;
-import com.quantity.measurement.dto.QuantityDTO.Unit;
+import com.app.quantitymeasurement.dto.QuantityDTO;
+import com.app.quantitymeasurement.dto.QuantityDTO.Unit;
 
 public interface QuantityMeasurementService {
     QuantityDTO compare(QuantityDTO a, QuantityDTO b);

@@ -1,6 +1,6 @@
-package com.quantity.measurement.model;
+package com.app.quantitymeasurement.model;
 
-import com.quantity.measurement.enumsimplm.WeightUnit;
+import com.app.quantitymeasurement.enumsimplm.WeightUnit;
 
 import java.util.Objects;
 

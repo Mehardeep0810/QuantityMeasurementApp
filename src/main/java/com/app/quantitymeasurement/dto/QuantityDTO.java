@@ -1,4 +1,4 @@
-package com.quantity.measurement.dto;
+package com.app.quantitymeasurement.dto;
 
 public class QuantityDTO {
     public enum MeasurementType {

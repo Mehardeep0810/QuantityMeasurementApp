@@ -1,7 +1,6 @@
-package com.quantity.measurement.model;
+package com.app.quantitymeasurement.model;
 
-import com.quantity.measurement.enums.IMeasurable;
-import com.quantity.measurement.exception.QuantityMeasurementException;
+import com.app.quantitymeasurement.enums.IMeasurable;
 
 import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;

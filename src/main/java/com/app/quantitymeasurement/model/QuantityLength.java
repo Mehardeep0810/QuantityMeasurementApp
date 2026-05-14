@@ -1,6 +1,6 @@
-package com.quantity.measurement.model;
+package com.app.quantitymeasurement.model;
 
-import com.quantity.measurement.enumsimplm.LengthUnit;
+import com.app.quantitymeasurement.enumsimplm.LengthUnit;
 
 public class QuantityLength {
 

@@ -1,12 +1,11 @@
 package QuantityMeasurementApp;
 
-import com.quantity.measurement.enumsimplm.WeightUnit;
-import com.quantity.measurement.model.Quantity;
-import com.quantity.measurement.model.QuantityWeight;
+import com.app.quantitymeasurement.enumsimplm.WeightUnit;
+import com.app.quantitymeasurement.model.QuantityWeight;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import com.quantity.measurement.model.QuantityLength;
-import com.quantity.measurement.enumsimplm.LengthUnit;
+import com.app.quantitymeasurement.model.QuantityLength;
+import com.app.quantitymeasurement.enumsimplm.LengthUnit;
 
 //@SpringBootTest
 class QuantityTest {

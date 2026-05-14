@@ -1,7 +1,7 @@
-package com.quantity.measurement.enumsimplm;
+package com.app.quantitymeasurement.enumsimplm;
 
-import com.quantity.measurement.enums.IMeasurable;
-import com.quantity.measurement.dto.QuantityDTO;
+import com.app.quantitymeasurement.enums.IMeasurable;
+import com.app.quantitymeasurement.dto.QuantityDTO;
 
 
 public enum LengthUnit implements IMeasurable {
