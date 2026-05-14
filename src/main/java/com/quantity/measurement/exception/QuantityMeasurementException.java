@@ -1,10 +1,6 @@
 package com.quantity.measurement.exception;
 
-/**
- * UC15-compliant QuantityMeasurementException.
- * Centralizes all quantity-measurement-related errors.
- * Extends RuntimeException (unchecked) for clean propagation.
- */
+
 public class QuantityMeasurementException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 

@@ -3,10 +3,6 @@ package com.quantity.measurement.enumsimplm;
 import com.quantity.measurement.enums.IMeasurable;
 import com.quantity.measurement.dto.QuantityDTO;
 
-/**
- * UC15-compliant WeightUnit enum.
- * Base unit: KILOGRAM
- */
 public enum WeightUnit implements IMeasurable {
 
     KILOGRAM(1.0),             // base unit

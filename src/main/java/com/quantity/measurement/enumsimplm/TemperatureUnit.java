@@ -3,11 +3,7 @@ package com.quantity.measurement.enumsimplm;
 import com.quantity.measurement.enums.IMeasurable;
 import com.quantity.measurement.dto.QuantityDTO;
 
-/**
- * UC15-compliant TemperatureUnit enum.
- * Base unit: CELSIUS
- * Arithmetic operations (ADD, SUBTRACT, DIVIDE) are unsupported.
- */
+
 public enum TemperatureUnit implements IMeasurable {
 
     CELSIUS {

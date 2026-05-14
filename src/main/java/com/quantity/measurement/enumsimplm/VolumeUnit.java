@@ -3,10 +3,7 @@ package com.quantity.measurement.enumsimplm;
 import com.quantity.measurement.enums.IMeasurable;
 import com.quantity.measurement.dto.QuantityDTO;
 
-/**
- * UC15-compliant VolumeUnit enum.
- * Base unit: LITRE
- */
+
 public enum VolumeUnit implements IMeasurable {
 
     LITRE(1.0),                // base unit

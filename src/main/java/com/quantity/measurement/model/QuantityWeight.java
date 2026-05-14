@@ -2,6 +2,8 @@ package com.quantity.measurement.model;
 
 import com.quantity.measurement.enumsimplm.WeightUnit;
 
+import java.util.Objects;
+
 public class QuantityWeight {
 
     private final Quantity<WeightUnit> delegate;
@@ -59,15 +61,22 @@ public class QuantityWeight {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof QuantityWeight other) {
-            return delegate.equals(other.delegate);
-        }
-        return false;
+        if (this == obj) return true;
+        if (!(obj instanceof QuantityWeight other)) return false;
+
+        // Normalize both to kilograms
+        double thisKg = this.delegate.getUnit().convertToBaseUnit(this.delegate.getValue());
+        double otherKg = other.delegate.getUnit().convertToBaseUnit(other.delegate.getValue());
+
+        // Compare with tolerance
+        return Math.abs(thisKg - otherKg) < 1e-6;
     }
 
     @Override
     public int hashCode() {
-        return delegate.hashCode();
+        // Normalize to kilograms for consistent hashing
+        double baseKg = this.delegate.getUnit().convertToBaseUnit(this.delegate.getValue());
+        return Objects.hash(Math.round(baseKg * 1e6));
     }
 
     @Override

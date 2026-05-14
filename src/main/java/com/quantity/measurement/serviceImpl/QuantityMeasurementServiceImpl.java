@@ -1,185 +1,160 @@
 package com.quantity.measurement.serviceImpl;
 
 import com.quantity.measurement.dto.QuantityDTO;
+import com.quantity.measurement.dto.QuantityDTO.Unit;
 import com.quantity.measurement.entity.QuantityMeasurementEntity;
-import com.quantity.measurement.enums.IMeasurable;
-import com.quantity.measurement.enumsimplm.LengthUnit;
-import com.quantity.measurement.enumsimplm.WeightUnit;
-import com.quantity.measurement.enumsimplm.VolumeUnit;
-import com.quantity.measurement.enumsimplm.TemperatureUnit;
-import com.quantity.measurement.exception.QuantityMeasurementException;
-import com.quantity.measurement.repository.QuantityMeasurementRepository;
 import com.quantity.measurement.repository.QuantityMeasurementRepository;
 import com.quantity.measurement.service.QuantityMeasurementService;
-import com.quantity.measurement.service.QuantityMeasurementService;
 
-
-/**
- * UC15-compliant QuantityMeasurementServiceImpl.
- * Implements business logic for compare, convert, add, subtract, divide.
- */
 public class QuantityMeasurementServiceImpl implements QuantityMeasurementService {
+    private final QuantityMeasurementRepository repo;
 
-    private final QuantityMeasurementRepository repository;
-
-    public QuantityMeasurementServiceImpl(QuantityMeasurementRepository repository) {
-        this.repository = repository;
-    }
-
-    private IMeasurable resolveUnit(QuantityDTO.Unit unit) {
-        if (unit == null) throw new QuantityMeasurementException("Unit cannot be null");
-        switch (unit) {
-            // Length
-            case FEET: return LengthUnit.FEET;
-            case INCH: return LengthUnit.INCH;
-            case YARD: return LengthUnit.YARD;
-            case CENTIMETER: return LengthUnit.CENTIMETER;
-            case METER: return LengthUnit.METER;
-            // Weight
-            case KILOGRAM: return WeightUnit.KILOGRAM;
-            case GRAM: return WeightUnit.GRAM;
-            case TONNE: return WeightUnit.TONNE;
-            case POUND: return WeightUnit.POUND;
-            // Volume
-            case LITRE: return VolumeUnit.LITRE;
-            case MILLILITRE: return VolumeUnit.MILLILITRE;
-            case GALLON: return VolumeUnit.GALLON;
-            // Temperature
-            case CELSIUS: return TemperatureUnit.CELSIUS;
-            case FAHRENHEIT: return TemperatureUnit.FAHRENHEIT;
-            case KELVIN: return TemperatureUnit.KELVIN;
-            default: throw new QuantityMeasurementException("Unsupported unit: " + unit);
-        }
+    public QuantityMeasurementServiceImpl(QuantityMeasurementRepository repo) {
+        this.repo = repo;
     }
 
     @Override
     public QuantityDTO compare(QuantityDTO a, QuantityDTO b) {
-        try {
-            IMeasurable unitA = resolveUnit(a.getUnit());
-            IMeasurable unitB = resolveUnit(b.getUnit());
+        double valueA = normalize(a);
+        double valueB = normalize(b);
 
-            if (unitA.getMeasurementType() != unitB.getMeasurementType()) {
-                throw new QuantityMeasurementException("Cross-category comparison not allowed");
-            }
+        boolean equal = Math.abs(valueA - valueB) < 1e-6;
 
-            double baseA = unitA.convertToBaseUnit(a.getValue());
-            double baseB = unitB.convertToBaseUnit(b.getValue());
-            boolean eq = Math.abs(baseA - baseB) < 1e-9;
+        repo.save(new QuantityMeasurementEntity(
+                a.getType().name(),
+                "COMPARE",
+                a.getValue() + " " + a.getUnit().name() + "==" + b.getValue() + " " + b.getUnit().name(),
+                String.valueOf(equal)
+        ));
 
-            repository.save(new QuantityMeasurementEntity(a.getType(), "COMPARE",
-                    a.getValue(), a.getUnit().name(),
-                    b.getValue(), b.getUnit().name(),
-                    eq ? 1.0 : 0.0, eq ? "EQUAL" : "NOT_EQUAL"));
-
-            return new QuantityDTO(eq ? 1.0 : 0.0, a.getUnit(), a.getType());
-        } catch (Exception ex) {
-            repository.save(new QuantityMeasurementEntity(a.getType(), "COMPARE", ex.getMessage()));
-            return QuantityDTO.error(ex.getMessage(), a.getType());
-        }
+        return new QuantityDTO(equal ? 1.0 : 0.0, a.getUnit(), a.getType());
     }
 
     @Override
-    public QuantityDTO convert(QuantityDTO input, QuantityDTO.Unit targetUnit) {
-        try {
-            IMeasurable sourceUnit = resolveUnit(input.getUnit());
-            IMeasurable target = resolveUnit(targetUnit);
-
-            if (sourceUnit.getMeasurementType() != target.getMeasurementType()) {
-                throw new QuantityMeasurementException("Cross-category conversion not allowed");
-            }
-
-            double base = sourceUnit.convertToBaseUnit(input.getValue());
-            double out = target.convertFromBaseUnit(base);
-
-            repository.save(new QuantityMeasurementEntity(input.getType(), "CONVERT",
-                    input.getValue(), input.getUnit().name(),
-                    out, targetUnit.name()));
-
-            return new QuantityDTO(out, targetUnit, input.getType());
-        } catch (Exception ex) {
-            repository.save(new QuantityMeasurementEntity(input.getType(), "CONVERT", ex.getMessage()));
-            return QuantityDTO.error(ex.getMessage(), input.getType());
+    public QuantityDTO add(QuantityDTO a, QuantityDTO b, Unit targetUnit) {
+        if (a.getType() == QuantityDTO.MeasurementType.TEMPERATURE ||
+                b.getType() == QuantityDTO.MeasurementType.TEMPERATURE) {
+            throw new UnsupportedOperationException("Arithmetic operations not supported for Temperature");
         }
+
+        double sum = normalize(a) + normalize(b);
+        double converted = convertToTarget(sum, targetUnit, a.getType());
+
+        repo.save(new QuantityMeasurementEntity(
+                a.getType().name(),
+                "ADD",
+                a.getValue() + "+" + b.getValue(),
+                converted + " " + targetUnit.name()
+        ));
+
+        return new QuantityDTO(converted, targetUnit, a.getType());
     }
 
     @Override
-    public QuantityDTO add(QuantityDTO a, QuantityDTO b, QuantityDTO.Unit targetUnit) {
-        try {
-            IMeasurable unitA = resolveUnit(a.getUnit());
-            IMeasurable unitB = resolveUnit(b.getUnit());
-            IMeasurable target = resolveUnit(targetUnit);
-
-            if (unitA.getMeasurementType() != unitB.getMeasurementType()) {
-                throw new QuantityMeasurementException("Cross-category addition not allowed");
-            }
-            unitA.validateOperationSupport("ADD");
-            unitB.validateOperationSupport("ADD");
-
-            double sumBase = unitA.convertToBaseUnit(a.getValue()) + unitB.convertToBaseUnit(b.getValue());
-            double out = target.convertFromBaseUnit(sumBase);
-
-            repository.save(new QuantityMeasurementEntity(a.getType(), "ADD",
-                    a.getValue(), a.getUnit().name(),
-                    b.getValue(), b.getUnit().name(),
-                    out, targetUnit.name()));
-
-            return new QuantityDTO(out, targetUnit, a.getType());
-        } catch (Exception ex) {
-            repository.save(new QuantityMeasurementEntity(a.getType(), "ADD", ex.getMessage()));
-            return QuantityDTO.error(ex.getMessage(), a.getType());
+    public QuantityDTO subtract(QuantityDTO a, QuantityDTO b, Unit targetUnit) {
+        if (a.getType() == QuantityDTO.MeasurementType.TEMPERATURE ||
+                b.getType() == QuantityDTO.MeasurementType.TEMPERATURE) {
+            throw new UnsupportedOperationException("Arithmetic operations not supported for Temperature");
         }
+
+        double diff = normalize(a) - normalize(b);
+        double converted = convertToTarget(diff, targetUnit, a.getType());
+
+        repo.save(new QuantityMeasurementEntity(
+                a.getType().name(),
+                "SUBTRACT",
+                a.getValue() + "-" + b.getValue(),
+                converted + " " + targetUnit.name()
+        ));
+
+        return new QuantityDTO(converted, targetUnit, a.getType());
     }
 
     @Override
-    public QuantityDTO subtract(QuantityDTO a, QuantityDTO b, QuantityDTO.Unit targetUnit) {
-        try {
-            IMeasurable unitA = resolveUnit(a.getUnit());
-            IMeasurable unitB = resolveUnit(b.getUnit());
-            IMeasurable target = resolveUnit(targetUnit);
+    public QuantityDTO convert(QuantityDTO source, Unit targetUnit) {
+        double normalized = normalize(source);
+        double converted = convertToTarget(normalized, targetUnit, source.getType());
 
-            if (unitA.getMeasurementType() != unitB.getMeasurementType()) {
-                throw new QuantityMeasurementException("Cross-category subtraction not allowed");
-            }
-            unitA.validateOperationSupport("SUBTRACT");
-            unitB.validateOperationSupport("SUBTRACT");
+        repo.save(new QuantityMeasurementEntity(
+                source.getType().name(),
+                "CONVERT",
+                source.getValue() + " " + source.getUnit().name(),
+                converted + " " + targetUnit.name()
+        ));
 
-            double diffBase = unitA.convertToBaseUnit(a.getValue()) - unitB.convertToBaseUnit(b.getValue());
-            double out = target.convertFromBaseUnit(diffBase);
-
-            repository.save(new QuantityMeasurementEntity(a.getType(), "SUBTRACT",
-                    a.getValue(), a.getUnit().name(),
-                    b.getValue(), b.getUnit().name(),
-                    out, targetUnit.name()));
-
-            return new QuantityDTO(out, targetUnit, a.getType());
-        } catch (Exception ex) {
-            repository.save(new QuantityMeasurementEntity(a.getType(), "SUBTRACT", ex.getMessage()));
-            return QuantityDTO.error(ex.getMessage(), a.getType());
-        }
+        return new QuantityDTO(converted, targetUnit, source.getType());
     }
 
     @Override
     public QuantityDTO divide(QuantityDTO a, QuantityDTO b) {
-        try {
-            IMeasurable unitA = resolveUnit(a.getUnit());
-            IMeasurable unitB = resolveUnit(b.getUnit());
-
-            if (unitA.getMeasurementType() != unitB.getMeasurementType()) {
-                throw new QuantityMeasurementException("Cross-category division not allowed");
-            }
-            if (b.getValue() == 0.0) throw new ArithmeticException("Divide by zero");
-
-            double scalar = unitA.convertToBaseUnit(a.getValue()) / unitB.convertToBaseUnit(b.getValue());
-
-            repository.save(new QuantityMeasurementEntity(a.getType(), "DIVIDE",
-                    a.getValue(), a.getUnit().name(),
-                    b.getValue(), b.getUnit().name(),
-                    scalar, "SCALAR"));
-
-            return new QuantityDTO(scalar, a.getUnit(), a.getType());
-        } catch (Exception ex) {
-            repository.save(new QuantityMeasurementEntity(a.getType(), "DIVIDE", ex.getMessage()));
-            return QuantityDTO.error(ex.getMessage(), a.getType());
+        if (a.getType() == QuantityDTO.MeasurementType.TEMPERATURE ||
+                b.getType() == QuantityDTO.MeasurementType.TEMPERATURE) {
+            throw new UnsupportedOperationException("Arithmetic operations not supported for Temperature");
         }
+        if (b.getValue() == 0) {
+            throw new ArithmeticException("Division by zero not allowed");
+        }
+
+        double quotient = normalize(a) / normalize(b);
+
+        repo.save(new QuantityMeasurementEntity(
+                a.getType().name(),
+                "DIVIDE",
+                a.getValue() + "/" + b.getValue(),
+                quotient + " " + a.getUnit().name()
+        ));
+
+        return new QuantityDTO(quotient, a.getUnit(), a.getType());
+    }
+
+    // --- Helpers ---
+    private double normalize(QuantityDTO q) {
+        switch (q.getType()) {
+            case LENGTH:
+                switch (q.getUnit()) {
+                    case FEET: return q.getValue();
+                    case INCH: return q.getValue() / 12.0;
+                    case YARD: return q.getValue() * 3.0;
+                    case CENTIMETER: return q.getValue() / 30.48;
+                }
+                break;
+            case WEIGHT:
+                switch (q.getUnit()) {
+                    case KILOGRAM: return q.getValue();
+                    case GRAM: return q.getValue() / 1000.0;
+                    case POUND: return q.getValue() * 0.453592;
+                }
+                break;
+            case TEMPERATURE:
+                switch (q.getUnit()) {
+                    case CELSIUS: return q.getValue();
+                    case FAHRENHEIT: return (q.getValue() - 32) * 5.0 / 9.0;
+                    case KELVIN: return q.getValue() - 273.15;
+                }
+                break;
+        }
+        throw new UnsupportedOperationException("Unsupported unit: " + q.getUnit());
+    }
+
+    private double convertToTarget(double baseValue, Unit targetUnit, QuantityDTO.MeasurementType type) {
+        switch (type) {
+            case LENGTH:
+                if (targetUnit == Unit.FEET) return baseValue;
+                if (targetUnit == Unit.INCH) return baseValue * 12.0;
+                if (targetUnit == Unit.YARD) return baseValue / 3.0;
+                if (targetUnit == Unit.CENTIMETER) return baseValue * 30.48;
+                break;
+            case WEIGHT:
+                if (targetUnit == Unit.KILOGRAM) return baseValue;
+                if (targetUnit == Unit.GRAM) return baseValue * 1000.0;
+                if (targetUnit == Unit.POUND) return baseValue / 0.453592;
+                break;
+            case TEMPERATURE:
+                if (targetUnit == Unit.CELSIUS) return baseValue;
+                if (targetUnit == Unit.FAHRENHEIT) return (baseValue * 9.0 / 5.0) + 32;
+                if (targetUnit == Unit.KELVIN) return baseValue + 273.15;
+                break;
+        }
+        throw new UnsupportedOperationException("Conversion not supported to " + targetUnit);
     }
 }
