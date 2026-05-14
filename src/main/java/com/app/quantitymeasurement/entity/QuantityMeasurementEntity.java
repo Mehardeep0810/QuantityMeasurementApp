@@ -1,4 +1,4 @@
-package com.quantity.measurement.entity;
+package com.app.quantitymeasurement.entity;
 
 import java.time.LocalDateTime;
 

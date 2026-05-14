@@ -1,6 +1,6 @@
-package com.quantity.measurement.model;
+package com.app.quantitymeasurement.model;
 
-import com.quantity.measurement.enums.IMeasurable;
+import com.app.quantitymeasurement.enums.IMeasurable;
 
 public class QuantityModel <U extends IMeasurable> {
     private final double value;

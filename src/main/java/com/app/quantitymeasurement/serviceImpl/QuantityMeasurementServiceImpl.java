@@ -1,12 +1,15 @@
-package com.quantity.measurement.serviceImpl;
+package com.app.quantitymeasurement.serviceImpl;
 
-import com.quantity.measurement.dto.QuantityDTO;
-import com.quantity.measurement.dto.QuantityDTO.Unit;
-import com.quantity.measurement.entity.QuantityMeasurementEntity;
-import com.quantity.measurement.repository.QuantityMeasurementRepository;
-import com.quantity.measurement.service.QuantityMeasurementService;
+import com.app.quantitymeasurement.dto.QuantityDTO;
+import com.app.quantitymeasurement.dto.QuantityDTO.Unit;
+import com.app.quantitymeasurement.entity.QuantityMeasurementEntity;
+import com.app.quantitymeasurement.repository.QuantityMeasurementRepository;
+import com.app.quantitymeasurement.service.QuantityMeasurementService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QuantityMeasurementServiceImpl implements QuantityMeasurementService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QuantityMeasurementServiceImpl.class);
     private final QuantityMeasurementRepository repo;
 
     public QuantityMeasurementServiceImpl(QuantityMeasurementRepository repo) {
@@ -15,10 +18,12 @@ public class QuantityMeasurementServiceImpl implements QuantityMeasurementServic
 
     @Override
     public QuantityDTO compare(QuantityDTO a, QuantityDTO b) {
+        LOGGER.debug("Comparing {} and {}", a, b);
         double valueA = normalize(a);
         double valueB = normalize(b);
 
         boolean equal = Math.abs(valueA - valueB) < 1e-6;
+        LOGGER.info("Comparison result: {} == {} -> {}", a, b, equal);
 
         repo.save(new QuantityMeasurementEntity(
                 a.getType().name(),
@@ -32,13 +37,16 @@ public class QuantityMeasurementServiceImpl implements QuantityMeasurementServic
 
     @Override
     public QuantityDTO add(QuantityDTO a, QuantityDTO b, Unit targetUnit) {
+        LOGGER.debug("Adding {} and {} into {}", a, b, targetUnit);
         if (a.getType() == QuantityDTO.MeasurementType.TEMPERATURE ||
                 b.getType() == QuantityDTO.MeasurementType.TEMPERATURE) {
+            LOGGER.error("Attempted to add temperature values, which is unsupported");
             throw new UnsupportedOperationException("Arithmetic operations not supported for Temperature");
         }
 
         double sum = normalize(a) + normalize(b);
         double converted = convertToTarget(sum, targetUnit, a.getType());
+        LOGGER.info("Addition result: {} + {} = {} {}", a, b, converted, targetUnit);
 
         repo.save(new QuantityMeasurementEntity(
                 a.getType().name(),
@@ -52,13 +60,16 @@ public class QuantityMeasurementServiceImpl implements QuantityMeasurementServic
 
     @Override
     public QuantityDTO subtract(QuantityDTO a, QuantityDTO b, Unit targetUnit) {
+        LOGGER.debug("Subtracting {} from {} into {}", b, a, targetUnit);
         if (a.getType() == QuantityDTO.MeasurementType.TEMPERATURE ||
                 b.getType() == QuantityDTO.MeasurementType.TEMPERATURE) {
+            LOGGER.error("Attempted to subtract temperature values, which is unsupported");
             throw new UnsupportedOperationException("Arithmetic operations not supported for Temperature");
         }
 
         double diff = normalize(a) - normalize(b);
         double converted = convertToTarget(diff, targetUnit, a.getType());
+        LOGGER.info("Subtraction result: {} - {} = {} {}", a, b, converted, targetUnit);
 
         repo.save(new QuantityMeasurementEntity(
                 a.getType().name(),
@@ -72,8 +83,10 @@ public class QuantityMeasurementServiceImpl implements QuantityMeasurementServic
 
     @Override
     public QuantityDTO convert(QuantityDTO source, Unit targetUnit) {
+        LOGGER.debug("Converting {} into {}", source, targetUnit);
         double normalized = normalize(source);
         double converted = convertToTarget(normalized, targetUnit, source.getType());
+        LOGGER.info("Conversion result: {} -> {} {}", source, converted, targetUnit);
 
         repo.save(new QuantityMeasurementEntity(
                 source.getType().name(),
@@ -87,15 +100,19 @@ public class QuantityMeasurementServiceImpl implements QuantityMeasurementServic
 
     @Override
     public QuantityDTO divide(QuantityDTO a, QuantityDTO b) {
+        LOGGER.debug("Dividing {} by {}", a, b);
         if (a.getType() == QuantityDTO.MeasurementType.TEMPERATURE ||
                 b.getType() == QuantityDTO.MeasurementType.TEMPERATURE) {
+            LOGGER.error("Attempted to divide temperature values, which is unsupported");
             throw new UnsupportedOperationException("Arithmetic operations not supported for Temperature");
         }
         if (b.getValue() == 0) {
+            LOGGER.error("Division by zero attempted");
             throw new ArithmeticException("Division by zero not allowed");
         }
 
         double quotient = normalize(a) / normalize(b);
+        LOGGER.info("Division result: {} / {} = {}", a, b, quotient);
 
         repo.save(new QuantityMeasurementEntity(
                 a.getType().name(),
@@ -133,6 +150,7 @@ public class QuantityMeasurementServiceImpl implements QuantityMeasurementServic
                 }
                 break;
         }
+        LOGGER.error("Unsupported unit encountered: {}", q.getUnit());
         throw new UnsupportedOperationException("Unsupported unit: " + q.getUnit());
     }
 
@@ -155,6 +173,7 @@ public class QuantityMeasurementServiceImpl implements QuantityMeasurementServic
                 if (targetUnit == Unit.KELVIN) return baseValue + 273.15;
                 break;
         }
+        LOGGER.error("Conversion not supported to {}", targetUnit);
         throw new UnsupportedOperationException("Conversion not supported to " + targetUnit);
     }
 }

@@ -1,4 +1,4 @@
-package com.quantity.measurement.util;
+package com.app.quantitymeasurement.database;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
