@@ -3,10 +3,7 @@ package com.quantity.measurement.enumsimplm;
 import com.quantity.measurement.enums.IMeasurable;
 import com.quantity.measurement.dto.QuantityDTO;
 
-/**
- * UC15-compliant LengthUnit enum.
- * Base unit: FEET
- */
+
 public enum LengthUnit implements IMeasurable {
 
     FEET(1.0),                  // base unit

@@ -6,11 +6,6 @@ import com.quantity.measurement.exception.QuantityMeasurementException;
 import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 
-/**
- * UC14/UC15-ready Quantity class.
- * Supports conversion, equality, and arithmetic for linear units.
- * Blocks arithmetic for temperature units.
- */
 public class Quantity<U extends IMeasurable> {
 
     private static final double EPSILON = 1e-6;

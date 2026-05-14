@@ -1,22 +1,24 @@
 package QuantityMeasurementApp;
 
 import com.quantity.measurement.dto.QuantityDTO;
+import com.quantity.measurement.entity.QuantityMeasurementEntity;
 import com.quantity.measurement.enumsimplm.LengthUnit;
 import com.quantity.measurement.enumsimplm.TemperatureUnit;
 import com.quantity.measurement.enumsimplm.VolumeUnit;
 import com.quantity.measurement.enumsimplm.WeightUnit;
-import com.quantity.measurement.exception.QuantityMeasurementException;
 import com.quantity.measurement.model.Quantity;
-import com.quantity.measurement.repository.QuantityMeasurementCacheRepository;
+import com.quantity.measurement.repoImpl.QuantityMeasurementCacheRepository;
 import com.quantity.measurement.repository.QuantityMeasurementRepository;
-import com.quantity.measurement.service.QuantityMeasurementService;
 import com.quantity.measurement.serviceImpl.QuantityMeasurementServiceImpl;
+import com.quantity.measurement.dto.QuantityDTO.Unit;
+import com.quantity.measurement.dto.QuantityDTO.MeasurementType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -1533,5 +1535,300 @@ public class QuantityGenericTest {
     @Test void subtract_cross_category_throws() { assertThrows(IllegalArgumentException.class, () -> new Quantity<>(1.0, LengthUnit.FEET).subtract((Quantity) new Quantity<>(1.0, VolumeUnit.LITRE))); }
     @Test void unsupported_temperature_arithmetic_throws() { assertThrows(UnsupportedOperationException.class, () -> new Quantity<>(1.0, TemperatureUnit.CELSIUS).add(new Quantity<>(1.0, TemperatureUnit.CELSIUS))); }
     @Test void invalid_dto_throws() { assertThrows(IllegalArgumentException.class, () -> new Quantity<>(Double.NaN, LengthUnit.FEET)); }
-}
 
+    //UC16
+    private QuantityMeasurementRepository repo;
+    private QuantityMeasurementServiceImpl service;
+
+    @BeforeEach
+    void setup() {
+        repo = QuantityMeasurementCacheRepository.getInstance();
+        repo.deleteAll();
+        service = new QuantityMeasurementServiceImpl(repo);
+    }
+
+    // --- Compare (5 tests) ---
+    @Test
+    void testCompare_LengthEquality_FeetInch() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(12.0, Unit.INCH, MeasurementType.LENGTH);
+        QuantityDTO result = service.compare(a, b);
+        assertEquals(1.0, result.getValue(), "1 FEET should equal 12 INCH");
+    }
+
+    @Test
+    void testCompare_LengthInequality() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(10.0, Unit.INCH, MeasurementType.LENGTH);
+        QuantityDTO result = service.compare(a, b);
+        assertEquals(0.0, result.getValue(), "1 FEET should not equal 10 INCH");
+    }
+
+    @Test
+    void testCompare_WeightEquality_KgGram() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(1000.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.compare(a, b);
+        assertEquals(1.0, result.getValue(), "1 KILOGRAM should equal 1000 GRAM");
+    }
+
+    @Test
+    void testCompare_WeightInequality() {
+        QuantityDTO a = new QuantityDTO(2.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(500.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.compare(a, b);
+        assertEquals(0.0, result.getValue(), "2 KG should not equal 500 G");
+    }
+
+    @Test
+    void testCompare_TemperatureEquality_CtoF() {
+        QuantityDTO a = new QuantityDTO(0.0, Unit.CELSIUS, MeasurementType.TEMPERATURE);
+        QuantityDTO b = new QuantityDTO(32.0, Unit.FAHRENHEIT, MeasurementType.TEMPERATURE);
+        QuantityDTO result = service.compare(a, b);
+        assertEquals(1.0, result.getValue(), "0°C should equal 32°F");
+    }
+
+    // --- Add (5 tests) ---
+    @Test
+    void testAdd_LengthUnits_SameUnit() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(2.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO result = service.add(a, b, Unit.FEET);
+        assertEquals(3.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testAdd_LengthUnits_MixedUnits() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(12.0, Unit.INCH, MeasurementType.LENGTH);
+        QuantityDTO result = service.add(a, b, Unit.FEET);
+        assertEquals(2.0, result.getValue(), 1e-9, "1 ft + 12 in = 2 ft");
+    }
+
+    @Test
+    void testAdd_WeightUnits_KgAndGram() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(500.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.add(a, b, Unit.KILOGRAM);
+        assertEquals(1.5, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testAdd_WeightUnits_MixedUnitsToGram() {
+        QuantityDTO a = new QuantityDTO(2.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(200.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.add(a, b, Unit.GRAM);
+        assertEquals(2200.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testAdd_TemperatureUnsupported() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                service.add(
+                        new QuantityDTO(100.0, Unit.CELSIUS, MeasurementType.TEMPERATURE),
+                        new QuantityDTO(50.0, Unit.CELSIUS, MeasurementType.TEMPERATURE),
+                        Unit.CELSIUS
+                )
+        );
+    }
+
+    // --- Subtract (5 tests) ---
+    @Test
+    void testSubtract_LengthUnits_SameUnit() {
+        QuantityDTO a = new QuantityDTO(5.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(2.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO result = service.subtract(a, b, Unit.FEET);
+        assertEquals(3.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testSubtract_LengthUnits_MixedUnits() {
+        QuantityDTO a = new QuantityDTO(2.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(12.0, Unit.INCH, MeasurementType.LENGTH);
+        QuantityDTO result = service.subtract(a, b, Unit.FEET);
+        assertEquals(1.0, result.getValue(), 1e-9, "2 ft - 12 in = 1 ft");
+    }
+
+    @Test
+    void testSubtract_WeightUnits_KgAndGram() {
+        QuantityDTO a = new QuantityDTO(2.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(500.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.subtract(a, b, Unit.KILOGRAM);
+        assertEquals(1.5, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testSubtract_WeightUnits_MixedUnitsToGram() {
+        QuantityDTO a = new QuantityDTO(2000.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(1.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.subtract(a, b, Unit.GRAM);
+        assertEquals(1000.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testSubtract_TemperatureUnsupported() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                service.subtract(
+                        new QuantityDTO(100.0, Unit.CELSIUS, MeasurementType.TEMPERATURE),
+                        new QuantityDTO(50.0, Unit.CELSIUS, MeasurementType.TEMPERATURE),
+                        Unit.CELSIUS
+                )
+        );
+    }
+
+    // --- Divide (5 tests) ---
+    @Test
+    void testDivide_LengthUnits_SameUnit() {
+        QuantityDTO a = new QuantityDTO(10.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(2.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO result = service.divide(a, b);
+        assertEquals(5.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testDivide_LengthUnits_MixedUnits() {
+        QuantityDTO a = new QuantityDTO(24.0, Unit.INCH, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(2.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO result = service.divide(a, b);
+        assertEquals(1.0, result.getValue(), 1e-9, "24 in / 2 ft = 1");
+    }
+
+    @Test
+    void testDivide_WeightUnits() {
+        QuantityDTO a = new QuantityDTO(2000.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(2.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.divide(a, b);
+        assertEquals(1.0, result.getValue(), 1e-9, "2000 g / 2 kg = 1");
+    }
+
+    @Test
+    void testDivide_WeightUnits_Mixed() {
+        QuantityDTO a = new QuantityDTO(2.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(500.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.divide(a, b);
+        assertEquals(4.0, result.getValue(), 1e-9, "2 kg / 500 g = 4");
+    }
+
+    @Test
+    void testDivide_TemperatureUnsupported() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                service.divide(
+                        new QuantityDTO(100.0, Unit.CELSIUS, MeasurementType.TEMPERATURE),
+                        new QuantityDTO(50.0, Unit.CELSIUS, MeasurementType.TEMPERATURE)
+                )
+        );
+    }
+
+    // --- Convert (6 tests) ---
+    @Test
+    void testConvert_WeightKgToGram() {
+        QuantityDTO source = new QuantityDTO(1.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.convert(source, Unit.GRAM);
+        assertEquals(1000.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testConvert_WeightGramToKg() {
+        QuantityDTO source = new QuantityDTO(1000.0, Unit.GRAM, MeasurementType.WEIGHT);
+        QuantityDTO result = service.convert(source, Unit.KILOGRAM);
+        assertEquals(1.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testConvert_LengthFeetToInch() {
+        QuantityDTO source = new QuantityDTO(2.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO result = service.convert(source, Unit.INCH);
+        assertEquals(24.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testConvert_LengthInchToFeet() {
+        QuantityDTO source = new QuantityDTO(12.0, Unit.INCH, MeasurementType.LENGTH);
+        QuantityDTO result = service.convert(source, Unit.FEET);
+        assertEquals(1.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testConvert_TemperatureCToF() {
+        QuantityDTO source = new QuantityDTO(0.0, Unit.CELSIUS, MeasurementType.TEMPERATURE);
+        QuantityDTO result = service.convert(source, Unit.FAHRENHEIT);
+        assertEquals(32.0, result.getValue(), 1e-9);
+    }
+
+    @Test
+    void testConvert_TemperatureFToC() {
+        QuantityDTO source = new QuantityDTO(32.0, Unit.FAHRENHEIT, MeasurementType.TEMPERATURE);
+        QuantityDTO result = service.convert(source, Unit.CELSIUS);
+        assertEquals(0.0, result.getValue(), 1e-9);
+    }
+
+    // --- Repository Integration (8 tests) ---
+    @Test
+    void testRepository_SaveAndRetrieve() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(2.0, Unit.FEET, MeasurementType.LENGTH);
+        service.add(a, b, Unit.FEET);
+        List<?> all = repo.getAllMeasurements();
+        assertEquals(1, all.size());
+        QuantityMeasurementEntity e = (QuantityMeasurementEntity) all.get(0);
+        assertEquals("ADD", e.getOperation());
+    }
+
+    @Test
+    void testRepository_GetByOperation() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.FEET, MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(1.0, Unit.FEET, MeasurementType.LENGTH);
+        service.add(a, b, Unit.FEET);
+        service.subtract(a, b, Unit.FEET);
+        List<?> adds = repo.getMeasurementsByOperation("ADD");
+        assertEquals(1, adds.size());
+    }
+
+    @Test
+    void testRepository_GetByType() {
+        QuantityDTO a = new QuantityDTO(1.0, Unit.KILOGRAM, MeasurementType.WEIGHT);
+        QuantityDTO b = new QuantityDTO(500.0, Unit.GRAM, MeasurementType.WEIGHT);
+        service.add(a, b, Unit.KILOGRAM);
+        List<?> weights = repo.getMeasurementsByType("WEIGHT");
+        assertEquals(1, weights.size());
+    }
+
+    @Test
+    void testRepository_TotalCount() {
+        QuantityDTO a = new QuantityDTO(1.0, QuantityDTO.Unit.FEET, QuantityDTO.MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(1.0, QuantityDTO.Unit.FEET, QuantityDTO.MeasurementType.LENGTH);
+        service.add(a, b, QuantityDTO.Unit.FEET);
+        service.add(a, b, QuantityDTO.Unit.FEET);
+        assertEquals(2, repo.getTotalCount());
+    }
+
+    @Test
+    void testRepository_DeleteAll() {
+        QuantityDTO a = new QuantityDTO(1.0, QuantityDTO.Unit.FEET, QuantityDTO.MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(1.0, QuantityDTO.Unit.FEET, QuantityDTO.MeasurementType.LENGTH);
+        service.add(a, b, QuantityDTO.Unit.FEET);
+        repo.deleteAll();
+        assertEquals(0, repo.getTotalCount());
+    }
+
+    @Test
+    void testRepository_SchemaExists_Cache() {
+        // For cache repo schemaExists should return true (in-memory)
+        assertTrue(repo.schemaExists());
+    }
+
+    @Test
+    void testRepository_ForceError() {
+        assertThrows(RuntimeException.class, () -> repo.forceError());
+    }
+
+    @Test
+    void testRepository_TimestampStored() {
+        QuantityDTO a = new QuantityDTO(1.0, QuantityDTO.Unit.FEET, QuantityDTO.MeasurementType.LENGTH);
+        QuantityDTO b = new QuantityDTO(1.0, QuantityDTO.Unit.FEET, QuantityDTO.MeasurementType.LENGTH);
+        service.add(a, b, QuantityDTO.Unit.FEET);
+        List<?> all = repo.getAllMeasurements();
+        QuantityMeasurementEntity e = (QuantityMeasurementEntity) all.get(0);
+        assertNotNull(e.getTimestamp());
+    }
+}

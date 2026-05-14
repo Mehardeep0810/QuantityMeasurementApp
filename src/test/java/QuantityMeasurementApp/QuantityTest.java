@@ -714,10 +714,11 @@ class QuantityTest {
 	void testEquality_TransitiveProperty() {
 		var a = new QuantityWeight(1, WeightUnit.KILOGRAM);
 		var b = new QuantityWeight(1000, WeightUnit.GRAM);
-		var c = new QuantityWeight(2.20462, WeightUnit.POUND);
+		var c = new QuantityWeight(2.20462262, WeightUnit.POUND); // exact factor
 
 		assertTrue(a.equals(b) && b.equals(c) && a.equals(c));
 	}
+
 
 	@Test
 	void testEquality_ZeroValue() {
