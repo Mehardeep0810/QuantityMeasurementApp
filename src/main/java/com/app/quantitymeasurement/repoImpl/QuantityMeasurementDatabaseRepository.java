@@ -1,18 +1,16 @@
 package com.app.quantitymeasurement.repoImpl;
 
-import com.app.quantitymeasurement.entity.QuantityMeasurementEntity;
-import com.app.quantitymeasurement.exception.DatabaseException;
-import com.app.quantitymeasurement.repository.QuantityMeasurementRepository;
 import com.app.quantitymeasurement.database.ConnectionPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.app.quantitymeasurement.exception.DatabaseException;
+import com.app.quantitymeasurement.model.QuantityMeasurementEntity;
+import com.app.quantitymeasurement.repository.QuantityMeasurementRepository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class QuantityMeasurementDatabaseRepository implements QuantityMeasurementRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(QuantityMeasurementDatabaseRepository.class);
+
     private final ConnectionPool pool;
 
     public QuantityMeasurementDatabaseRepository(ConnectionPool pool) {
@@ -20,176 +18,205 @@ public class QuantityMeasurementDatabaseRepository implements QuantityMeasuremen
     }
 
     @Override
-    public void save(QuantityMeasurementEntity e) {
-        LOGGER.debug("Saving entity to database: {}", e);
-        try (Connection c = pool.acquire()) {
-            PreparedStatement ps = c.prepareStatement(
-                    "INSERT INTO quantity_measurement_entity(measurement_type, operation, operand, result, timestamp) VALUES (?, ?, ?, ?, ?)"
-            );
-            ps.setString(1, e.getMeasurementType());
-            ps.setString(2, e.getOperation());
-            ps.setString(3, e.getOperand());
-            ps.setString(4, e.getResult());
-            ps.setTimestamp(5, Timestamp.valueOf(e.getTimestamp()));
+    public <S extends QuantityMeasurementEntity> S save(S entity) {
+        final String sql = "INSERT INTO quantity_measurements (measurement_type, operation, input, result, timestamp) VALUES (?,?,?,?,?)";
+        try (Connection c = pool.acquire();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, entity.getMeasurementType());
+            ps.setString(2, entity.getOperation());
+            ps.setString(3, entity.getInput());
+            ps.setString(4, entity.getResult());
+            ps.setTimestamp(5, Timestamp.valueOf(entity.getTimestamp()));
             ps.executeUpdate();
-            pool.release(c);
-            LOGGER.info("Entity saved successfully: {}", e);
-        } catch (Exception ex) {
-            LOGGER.error("Save failed for entity {}", e, ex);
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    long generatedId = rs.getLong(1);
+                    entity.setId(generatedId);
+                }
+            }
+            return entity;
+        } catch (SQLException ex) {
             throw new DatabaseException("Save failed", ex);
         }
     }
 
     @Override
-    public List<QuantityMeasurementEntity> getAllMeasurements() {
-        LOGGER.debug("Fetching all measurements from database");
+    public List<QuantityMeasurementEntity> findAll() {
+        final String sql = "SELECT id, measurement_type, operation, input, result, timestamp FROM quantity_measurements";
         List<QuantityMeasurementEntity> list = new ArrayList<>();
-        try (Connection c = pool.acquire()) {
-            Statement st = c.createStatement();
-            ResultSet rs = st.executeQuery("SELECT measurement_type, operation, operand, result, timestamp FROM quantity_measurement_entity");
+        try (Connection c = pool.acquire();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+
             while (rs.next()) {
-                list.add(new QuantityMeasurementEntity(
+                QuantityMeasurementEntity e = new QuantityMeasurementEntity(
                         rs.getString("measurement_type"),
                         rs.getString("operation"),
-                        rs.getString("operand"),
+                        rs.getString("input"),
                         rs.getString("result")
-                ));
+                );
+                e.setId(rs.getLong("id"));
+                Timestamp ts = rs.getTimestamp("timestamp");
+                if (ts != null) e.setTimestamp(ts.toLocalDateTime());
+                list.add(e);
             }
-            pool.release(c);
-            LOGGER.info("Fetched {} measurements from database", list.size());
-        } catch (Exception ex) {
-            LOGGER.error("Fetch all failed", ex);
-            throw new DatabaseException("Fetch all failed", ex);
+            return list;
+        } catch (SQLException ex) {
+            throw new DatabaseException("Find all failed", ex);
         }
-        return list;
-    }
-
-    @Override
-    public List<QuantityMeasurementEntity> getMeasurementsByOperation(String operation) {
-        LOGGER.debug("Fetching measurements by operation: {}", operation);
-        List<QuantityMeasurementEntity> list = new ArrayList<>();
-        try (Connection c = pool.acquire()) {
-            PreparedStatement ps = c.prepareStatement(
-                    "SELECT measurement_type, operation, operand, result, timestamp FROM quantity_measurement_entity WHERE operation = ?"
-            );
-            ps.setString(1, operation);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(new QuantityMeasurementEntity(
-                        rs.getString("measurement_type"),
-                        rs.getString("operation"),
-                        rs.getString("operand"),
-                        rs.getString("result")
-                ));
-            }
-            pool.release(c);
-            LOGGER.info("Fetched {} measurements for operation {}", list.size(), operation);
-        } catch (Exception ex) {
-            LOGGER.error("Fetch by operation failed for {}", operation, ex);
-            throw new DatabaseException("Fetch by operation failed", ex);
-        }
-        return list;
-    }
-
-    @Override
-    public List<QuantityMeasurementEntity> getMeasurementsByType(String type) {
-        LOGGER.debug("Fetching measurements by type: {}", type);
-        List<QuantityMeasurementEntity> list = new ArrayList<>();
-        try (Connection c = pool.acquire()) {
-            PreparedStatement ps = c.prepareStatement(
-                    "SELECT measurement_type, operation, operand, result, timestamp FROM quantity_measurement_entity WHERE measurement_type = ?"
-            );
-            ps.setString(1, type);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(new QuantityMeasurementEntity(
-                        rs.getString("measurement_type"),
-                        rs.getString("operation"),
-                        rs.getString("operand"),
-                        rs.getString("result")
-                ));
-            }
-            pool.release(c);
-            LOGGER.info("Fetched {} measurements for type {}", list.size(), type);
-        } catch (Exception ex) {
-            LOGGER.error("Fetch by type failed for {}", type, ex);
-            throw new DatabaseException("Fetch by type failed", ex);
-        }
-        return list;
-    }
-
-    @Override
-    public int getTotalCount() {
-        LOGGER.debug("Fetching total count of measurements");
-        try (Connection c = pool.acquire()) {
-            Statement st = c.createStatement();
-            ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM quantity_measurement_entity");
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                pool.release(c);
-                LOGGER.info("Total count of measurements: {}", count);
-                return count;
-            }
-            pool.release(c);
-        } catch (Exception ex) {
-            LOGGER.error("Count failed", ex);
-            throw new DatabaseException("Count failed", ex);
-        }
-        return 0;
     }
 
     @Override
     public void deleteAll() {
-        LOGGER.warn("Deleting all measurements from database");
-        try (Connection c = pool.acquire()) {
-            Statement st = c.createStatement();
-            st.executeUpdate("DELETE FROM quantity_measurement_entity");
-            pool.release(c);
-            LOGGER.info("All measurements deleted successfully");
-        } catch (Exception ex) {
-            LOGGER.error("Delete all failed", ex);
+        final String sql = "DELETE FROM quantity_measurements";
+        try (Connection c = pool.acquire();
+             Statement st = c.createStatement()) {
+            st.executeUpdate(sql);
+        } catch (SQLException ex) {
             throw new DatabaseException("Delete all failed", ex);
         }
     }
 
     @Override
+    public long count() {
+        final String sql = "SELECT COUNT(*) FROM quantity_measurements";
+        try (Connection c = pool.acquire();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next()) return rs.getLong(1);
+            return 0L;
+        } catch (SQLException ex) {
+            throw new DatabaseException("Count failed", ex);
+        }
+    }
+
+    @Override
+    public List<QuantityMeasurementEntity> findByMeasurementType(String measurementType) {
+        final String sql = "SELECT id, measurement_type, operation, input, result, timestamp FROM quantity_measurements WHERE measurement_type = ?";
+        List<QuantityMeasurementEntity> list = new ArrayList<>();
+        try (Connection c = pool.acquire();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, measurementType);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    QuantityMeasurementEntity e = new QuantityMeasurementEntity(
+                            rs.getString("measurement_type"),
+                            rs.getString("operation"),
+                            rs.getString("input"),
+                            rs.getString("result")
+                    );
+                    e.setId(rs.getLong("id"));
+                    Timestamp ts = rs.getTimestamp("timestamp");
+                    if (ts != null) e.setTimestamp(ts.toLocalDateTime());
+                    list.add(e);
+                }
+            }
+            return list;
+        } catch (SQLException ex) {
+            throw new DatabaseException("Find by type failed", ex);
+        }
+    }
+
+    @Override
+    public List<QuantityMeasurementEntity> findByOperation(String operation) {
+        final String sql = "SELECT id, measurement_type, operation, input, result, timestamp FROM quantity_measurements WHERE operation = ?";
+        List<QuantityMeasurementEntity> list = new ArrayList<>();
+        try (Connection c = pool.acquire();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, operation);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    QuantityMeasurementEntity e = new QuantityMeasurementEntity(
+                            rs.getString("measurement_type"),
+                            rs.getString("operation"),
+                            rs.getString("input"),
+                            rs.getString("result")
+                    );
+                    e.setId(rs.getLong("id"));
+                    Timestamp ts = rs.getTimestamp("timestamp");
+                    if (ts != null) e.setTimestamp(ts.toLocalDateTime());
+                    list.add(e);
+                }
+            }
+            return list;
+        } catch (SQLException ex) {
+            throw new DatabaseException("Find by operation failed", ex);
+        }
+    }
+
+    @Override
+    public long countByOperation(String operation) {
+        final String sql = "SELECT COUNT(*) FROM quantity_measurements WHERE operation = ?";
+        try (Connection c = pool.acquire();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, operation);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getLong(1);
+                return 0L;
+            }
+        } catch (SQLException ex) {
+            throw new DatabaseException("Count by operation failed", ex);
+        }
+    }
+
+    @Override
+    public List<QuantityMeasurementEntity> getAllMeasurements() {
+        return findAll();
+    }
+
+    @Override
+    public List<QuantityMeasurementEntity> getMeasurementsByOperation(String operation) {
+        return findByOperation(operation);
+    }
+
+    @Override
+    public List<QuantityMeasurementEntity> getMeasurementsByType(String type) {
+        return findByMeasurementType(type);
+    }
+
+    @Override
+    public long getTotalCount() {
+        return count();
+    }
+
+    @Override
     public boolean schemaExists() {
-        LOGGER.debug("Checking if schema exists");
         try (Connection c = pool.acquire()) {
             DatabaseMetaData meta = c.getMetaData();
-            ResultSet rs = meta.getTables(null, null, "QUANTITY_MEASUREMENT_ENTITY", null);
-            boolean exists = rs.next();
-            pool.release(c);
-            LOGGER.info("Schema exists: {}", exists);
-            return exists;
-        } catch (Exception ex) {
-            LOGGER.error("Schema check failed", ex);
+            try (ResultSet rs = meta.getTables(null, null, "quantity_measurements", null)) {
+                if (rs.next()) return true;
+            }
+            try (ResultSet rs2 = meta.getTables(null, null, "QUANTITY_MEASUREMENTS", null)) {
+                return rs2.next();
+            }
+        } catch (SQLException ex) {
             throw new DatabaseException("Schema check failed", ex);
         }
     }
 
     @Override
     public void forceError() {
-        LOGGER.error("Forced error triggered in DatabaseRepository");
-        throw new DatabaseException("Forced error for testing", new RuntimeException());
+        throw new RuntimeException("Forced error for testing");
     }
 
     public void initializeSchema() {
-        LOGGER.debug("Initializing schema for quantity_measurement_entity");
-        try (Connection c = pool.acquire()) {
-            Statement st = c.createStatement();
-            st.executeUpdate("CREATE TABLE IF NOT EXISTS quantity_measurement_entity (" +
-                    "id IDENTITY PRIMARY KEY, " +
-                    "measurement_type VARCHAR(50), " +
-                    "operation VARCHAR(50), " +
-                    "operand VARCHAR(255), " +
-                    "result VARCHAR(255), " +
-                    "timestamp TIMESTAMP)");
-            pool.release(c);
-            LOGGER.info("Schema initialized successfully");
-        } catch (Exception ex) {
-            LOGGER.error("Schema initialization failed", ex);
-            throw new DatabaseException("Schema initialization failed", ex);
+        final String sql = "CREATE TABLE IF NOT EXISTS quantity_measurements (" +
+                "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
+                "measurement_type VARCHAR(255), " +
+                "operation VARCHAR(255), " +
+                "input VARCHAR(1024), " +
+                "result VARCHAR(1024), " +
+                "timestamp TIMESTAMP)";
+        try (Connection c = pool.acquire();
+             Statement st = c.createStatement()) {
+            st.executeUpdate(sql);
+        } catch (SQLException ex) {
+            throw new DatabaseException("Schema init failed", ex);
         }
     }
 }

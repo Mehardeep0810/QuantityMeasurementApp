@@ -1,12 +1,12 @@
-package QuantityMeasurementApp;
+package com.app.quantitymeasurement;
 
 import com.app.quantitymeasurement.dto.QuantityDTO;
-import com.app.quantitymeasurement.entity.QuantityMeasurementEntity;
+import com.app.quantitymeasurement.model.QuantityMeasurementEntity;
 import com.app.quantitymeasurement.enumsimplm.LengthUnit;
 import com.app.quantitymeasurement.enumsimplm.TemperatureUnit;
 import com.app.quantitymeasurement.enumsimplm.VolumeUnit;
 import com.app.quantitymeasurement.enumsimplm.WeightUnit;
-import com.app.quantitymeasurement.model.Quantity;
+import com.app.quantitymeasurement.models.Quantity;
 import com.app.quantitymeasurement.repoImpl.QuantityMeasurementCacheRepository;
 import com.app.quantitymeasurement.repository.QuantityMeasurementRepository;
 import com.app.quantitymeasurement.serviceImpl.QuantityMeasurementServiceImpl;
@@ -1542,10 +1542,11 @@ public class QuantityGenericTest {
 
     @BeforeEach
     void setup() {
-        repo = QuantityMeasurementCacheRepository.getInstance();
+        repo = QuantityMeasurementCacheRepository.getInstance(); // use your in-memory repo
         repo.deleteAll();
         service = new QuantityMeasurementServiceImpl(repo);
     }
+
 
     // --- Compare (5 tests) ---
     @Test

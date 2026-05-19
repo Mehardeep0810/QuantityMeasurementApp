@@ -1,4 +1,4 @@
-package com.app.quantitymeasurement.model;
+package com.app.quantitymeasurement.models;
 
 import com.app.quantitymeasurement.enumsimplm.WeightUnit;
 
@@ -23,7 +23,6 @@ public class QuantityWeight {
         return delegate.getUnit();
     }
 
-    // Legacy conversion helpers
     public double toKilogram() {
         return delegate.convertTo(WeightUnit.KILOGRAM).getValue();
     }
