@@ -1,4 +1,4 @@
-package com.app.quantitymeasurement.model;
+package com.app.quantitymeasurement.models;
 
 import com.app.quantitymeasurement.enums.IMeasurable;
 

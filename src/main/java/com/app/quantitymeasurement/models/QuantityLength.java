@@ -1,4 +1,4 @@
-package com.app.quantitymeasurement.model;
+package com.app.quantitymeasurement.models;
 
 import com.app.quantitymeasurement.enumsimplm.LengthUnit;
 
@@ -65,7 +65,7 @@ public class QuantityLength {
         return new QuantityLength(result.getValue(), result.getUnit());
     }
 
-    // Static helper for legacy tests
+
     public static double convert(double value, LengthUnit from, LengthUnit to) {
         if (from == null || to == null) {
             throw new IllegalArgumentException("Units cannot be null");
