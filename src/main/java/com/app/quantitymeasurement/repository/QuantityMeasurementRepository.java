@@ -1,24 +1,12 @@
 package com.app.quantitymeasurement.repository;
 
 import com.app.quantitymeasurement.model.QuantityMeasurementEntity;
-
+import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
-public interface QuantityMeasurementRepository {
-    <S extends QuantityMeasurementEntity> S save(S entity);
-    List<QuantityMeasurementEntity> findAll();
-    void deleteAll();
-    long count();
-
-    List<QuantityMeasurementEntity> findByMeasurementType(String measurementType);
-    List<QuantityMeasurementEntity> findByOperation(String operation);
-    long countByOperation(String operation);
-
-    // helpers used by tests
-    List<QuantityMeasurementEntity> getAllMeasurements();
-    List<QuantityMeasurementEntity> getMeasurementsByOperation(String operation);
-    List<QuantityMeasurementEntity> getMeasurementsByType(String type);
-    long getTotalCount();
-    boolean schemaExists();
-    void forceError();
+public interface QuantityMeasurementRepository extends JpaRepository<QuantityMeasurementEntity, Long> {
+    List<QuantityMeasurementEntity> findByMeasurementTypeIgnoreCase(String measurementType);
+    List<QuantityMeasurementEntity> findByOperationIgnoreCase(String operation);
+    long countByOperationIgnoreCase(String operation);
+    List<QuantityMeasurementEntity> findByOwnerEmail(String ownerEmail);
 }

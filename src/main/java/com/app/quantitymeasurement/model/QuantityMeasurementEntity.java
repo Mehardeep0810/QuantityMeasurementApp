@@ -1,25 +1,45 @@
 package com.app.quantitymeasurement.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
+@Entity
+@Table(name = "quantity_measurements", indexes = {
+        @Index(name = "idx_measurement_type", columnList = "measurementType"),
+        @Index(name = "idx_operation", columnList = "operation"),
+        @Index(name = "idx_owner_email", columnList = "ownerEmail")
+})
 public class QuantityMeasurementEntity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String measurementType;
     private String operation;
+
+    @Column(length = 1024)
     private String input;
+
+    @Column(length = 1024)
     private String result;
+
+    private String ownerEmail;
+
     private LocalDateTime timestamp;
 
-    public QuantityMeasurementEntity() { }
+    public QuantityMeasurementEntity() {}
 
-    public QuantityMeasurementEntity(String measurementType, String operation, String input, String result) {
+    public QuantityMeasurementEntity(String measurementType, String operation, String input, String result, String ownerEmail) {
         this.measurementType = measurementType;
         this.operation = operation;
         this.input = input;
         this.result = result;
+        this.ownerEmail = ownerEmail;
+        this.timestamp = LocalDateTime.now();
     }
+
+    // getters and setters
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -36,37 +56,9 @@ public class QuantityMeasurementEntity {
     public String getResult() { return result; }
     public void setResult(String result) { this.result = result; }
 
+    public String getOwnerEmail() { return ownerEmail; }
+    public void setOwnerEmail(String ownerEmail) { this.ownerEmail = ownerEmail; }
+
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        QuantityMeasurementEntity that = (QuantityMeasurementEntity) o;
-        return Objects.equals(id, that.id)
-                && Objects.equals(measurementType, that.measurementType)
-                && Objects.equals(operation, that.operation)
-                && Objects.equals(input, that.input)
-                && Objects.equals(result, that.result)
-                && Objects.equals(timestamp, that.timestamp);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, measurementType, operation, input, result, timestamp);
-    }
-
-    @Override
-    public String toString() {
-        return "QuantityMeasurementEntity{" +
-                "id=" + id +
-                ", measurementType='" + measurementType + '\'' +
-                ", operation='" + operation + '\'' +
-                ", input='" + input + '\'' +
-                ", result='" + result + '\'' +
-                ", timestamp=" + timestamp +
-                '}';
-    }
 }

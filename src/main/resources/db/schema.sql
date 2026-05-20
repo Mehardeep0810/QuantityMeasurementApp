@@ -1,25 +1,28 @@
--- UC16 Database Schema
--- Default: H2 in-memory DB
--- Future: MySQL/PostgreSQL supported (same schema)
-
-CREATE TABLE IF NOT EXISTS quantity_measurement_entity (
-                                                           id IDENTITY PRIMARY KEY,        -- Auto-increment ID (H2)
-                                                           type VARCHAR(50) NOT NULL,      -- Measurement type (LENGTH, WEIGHT, VOLUME, TEMPERATURE)
-    operation VARCHAR(50) NOT NULL, -- Operation performed (ADD, COMPARE, CONVERT)
-    operand VARCHAR(255) NOT NULL,  -- Input values (e.g., "1ft+12in")
-    result VARCHAR(255) NOT NULL,   -- Result (e.g., "2ft")
-    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp of operation
+CREATE TABLE IF NOT EXISTS users (
+                                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                     email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255),
+    provider VARCHAR(100),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
     );
 
--- === MySQL/PostgreSQL (future use) ===
--- Uncomment and adjust if migrating to production DB
-/*
-CREATE TABLE quantity_measurement_entity (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    type VARCHAR(50) NOT NULL,
-    operation VARCHAR(50) NOT NULL,
-    operand VARCHAR(255) NOT NULL,
-    result VARCHAR(255) NOT NULL,
-    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-*/
+CREATE TABLE IF NOT EXISTS user_roles (
+                                          user_id BIGINT NOT NULL,
+                                          role VARCHAR(100),
+    CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+CREATE TABLE IF NOT EXISTS quantity_measurements (
+                                                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                                     measurement_type VARCHAR(50),
+    operation VARCHAR(50),
+    input VARCHAR(1024),
+    result VARCHAR(1024),
+    owner_email VARCHAR(255),
+    timestamp TIMESTAMP
+    );
+
+CREATE INDEX idx_measurement_type ON quantity_measurements(measurement_type);
+CREATE INDEX idx_operation ON quantity_measurements(operation);
+CREATE INDEX idx_owner_email ON quantity_measurements(owner_email);
