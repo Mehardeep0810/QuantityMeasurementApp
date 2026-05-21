@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: quantitymeasurement-backend
-    buildCommand: "./mvnw clean package"
-    startCommand: "java -jar target/*.jar"
-    plan: free
