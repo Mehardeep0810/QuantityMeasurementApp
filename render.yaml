@@ -5,9 +5,3 @@ services:
     buildCommand: "./mvnw clean package"
     startCommand: "java -jar target/*.jar"
     plan: free
-
-  - type: static_site
-    name: quantitymeasurement-frontend
-    rootDir: frontend
-    buildCommand: "npm install && npm run build"
-    staticPublishPath: dist
