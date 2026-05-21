@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 
-const API = "http://localhost:8080/api"
+//const API = "http://localhost:8080/api"
+const API =
+  "https://quantitymeasurement-backend.onrender.com/api"
 
 const measurementUnits = {
   LENGTH: ["FEET", "INCH", "YARD", "CENTIMETER", "METER"],

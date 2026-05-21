@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: quantitymeasurement-backend
+    env: java
+    buildCommand: "./mvnw clean package"
+    startCommand: "java -jar target/*.jar"
+    plan: free
+
+  - type: static
+    name: quantitymeasurement-frontend
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: dist
