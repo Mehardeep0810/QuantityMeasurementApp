@@ -11,7 +11,10 @@ const measurementUnits = {
 }
 
 function Home() {
-  const [token, setToken] = useState(localStorage.getItem("jwt") || "")
+  const [token, setToken] = useState(
+    localStorage.getItem("jwt") || ""
+  )
+
   const [result, setResult] = useState("")
 
   const [type, setType] = useState("LENGTH")
@@ -26,6 +29,7 @@ function Home() {
 
   useEffect(() => {
     const units = measurementUnits[type]
+
     setUnit1(units[0])
     setUnit2(units[1] || units[0])
     setTargetUnit(units[0])
@@ -33,12 +37,19 @@ function Home() {
 
   const login = async () => {
     try {
-      const response = await axios.get(`${API}/auth/login`, {
-        withCredentials: true,
-      })
+      const response = await axios.get(
+        `${API}/auth/login`,
+        {
+          withCredentials: true,
+        }
+      )
 
       if (response.data.jwt) {
-        localStorage.setItem("jwt", response.data.jwt)
+        localStorage.setItem(
+          "jwt",
+          response.data.jwt
+        )
+
         setToken(response.data.jwt)
       }
     } catch (err) {
@@ -48,10 +59,12 @@ function Home() {
     }
   }
 
-  const headers = {
-    Authorization: `Bearer ${token}`,
+  const getHeaders = () => ({
+    Authorization: `Bearer ${localStorage.getItem(
+      "jwt"
+    )}`,
     "Content-Type": "application/json",
-  }
+  })
 
   const createDTO = (value, unit) => ({
     value: Number(value),
@@ -75,8 +88,14 @@ function Home() {
         }
       } else {
         payload = {
-          thisQuantityDTO: createDTO(value1, unit1),
-          thatQuantityDTO: createDTO(value2, unit2),
+          thisQuantityDTO: createDTO(
+            value1,
+            unit1
+          ),
+          thatQuantityDTO: createDTO(
+            value2,
+            unit2
+          ),
           targetUnit,
         }
       }
@@ -84,22 +103,33 @@ function Home() {
       const response = await axios.post(
         `${API}/v1/quantities/${operation}`,
         payload,
-        { headers }
+        {
+          headers: getHeaders(),
+        }
       )
 
-      setResult(JSON.stringify(response.data, null, 2))
+      setResult(
+        JSON.stringify(response.data, null, 2)
+      )
     } catch (err) {
       console.log(err)
 
       if (err.response?.data) {
-        setResult(JSON.stringify(err.response.data, null, 2))
+        setResult(
+          JSON.stringify(
+            err.response.data,
+            null,
+            2
+          )
+        )
       } else {
         setResult("Server Error")
       }
     }
   }
 
-  const disableTemperatureArithmetic = type === "TEMPERATURE"
+  const disableTemperatureArithmetic =
+    type === "TEMPERATURE"
 
   return (
     <div
@@ -118,12 +148,14 @@ function Home() {
           margin: "auto",
         }}
       >
+        {/* TITLE */}
         <h1
           style={{
             textAlign: "center",
             fontSize: "50px",
             marginBottom: "10px",
             color: "white",
+            fontWeight: "bold",
           }}
         >
           Quantity Measurement System
@@ -134,15 +166,17 @@ function Home() {
             textAlign: "center",
             opacity: 0.8,
             marginBottom: "40px",
+            fontSize: "20px",
           }}
         >
           Spring Boot + React + JWT Authentication
         </p>
 
+        {/* JWT SECTION */}
         <div
           style={{
             background: "rgba(255,255,255,0.1)",
-            padding: "20px",
+            padding: "25px",
             borderRadius: "20px",
             marginBottom: "30px",
             backdropFilter: "blur(10px)",
@@ -166,17 +200,75 @@ function Home() {
 
           <div
             style={{
-              marginTop: "20px",
-              wordBreak: "break-word",
-              fontSize: "14px",
+              marginTop: "25px",
             }}
           >
-            <strong>JWT:</strong>
+            <strong
+              style={{
+                fontSize: "20px",
+              }}
+            >
+              JWT Token
+            </strong>
+
+            <textarea
+              value={token}
+              onChange={(e) => {
+                setToken(e.target.value)
+
+                localStorage.setItem(
+                  "jwt",
+                  e.target.value
+                )
+              }}
+              placeholder="Paste JWT token here"
+              style={{
+                width: "95%",
+                height: "80px",
+                marginTop: "15px",
+                padding: "15px",
+                borderRadius: "12px",
+                border: "none",
+                fontSize: "12px",
+                resize: "none",
+                overflowWrap: "break-word",
+                wordBreak: "break-all",
+                background: "#091224",
+                color: "#00ff88",
+                fontFamily: "monospace",
+                outline: "none",
+              }}
+            />
+
             <br />
-            {token || "No token yet"}
+
+            <button
+              onClick={() => {
+                localStorage.setItem(
+                  "jwt",
+                  token
+                )
+
+                alert("JWT Token Saved!")
+              }}
+              style={{
+                marginTop: "15px",
+                padding: "12px 22px",
+                border: "none",
+                borderRadius: "10px",
+                background: "#2563eb",
+                color: "white",
+                fontWeight: "bold",
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              Save Token
+            </button>
           </div>
         </div>
 
+        {/* MAIN GRID */}
         <div
           style={{
             display: "grid",
@@ -184,6 +276,7 @@ function Home() {
             gap: "25px",
           }}
         >
+          {/* LEFT PANEL */}
           <div
             style={{
               background: "rgba(255,255,255,0.1)",
@@ -198,13 +291,26 @@ function Home() {
 
             <select
               value={type}
-              onChange={(e) => setType(e.target.value)}
+              onChange={(e) =>
+                setType(e.target.value)
+              }
               style={inputStyle}
             >
-              <option value="LENGTH">Length</option>
-              <option value="WEIGHT">Weight</option>
-              <option value="VOLUME">Volume</option>
-              <option value="TEMPERATURE">Temperature</option>
+              <option value="LENGTH">
+                Length
+              </option>
+
+              <option value="WEIGHT">
+                Weight
+              </option>
+
+              <option value="VOLUME">
+                Volume
+              </option>
+
+              <option value="TEMPERATURE">
+                Temperature
+              </option>
             </select>
 
             <h3>First Quantity</h3>
@@ -213,13 +319,17 @@ function Home() {
               type="number"
               placeholder="Value"
               value={value1}
-              onChange={(e) => setValue1(e.target.value)}
+              onChange={(e) =>
+                setValue1(e.target.value)
+              }
               style={inputStyle}
             />
 
             <select
               value={unit1}
-              onChange={(e) => setUnit1(e.target.value)}
+              onChange={(e) =>
+                setUnit1(e.target.value)
+              }
               style={inputStyle}
             >
               {measurementUnits[type].map((u) => (
@@ -233,13 +343,17 @@ function Home() {
               type="number"
               placeholder="Value"
               value={value2}
-              onChange={(e) => setValue2(e.target.value)}
+              onChange={(e) =>
+                setValue2(e.target.value)
+              }
               style={inputStyle}
             />
 
             <select
               value={unit2}
-              onChange={(e) => setUnit2(e.target.value)}
+              onChange={(e) =>
+                setUnit2(e.target.value)
+              }
               style={inputStyle}
             >
               {measurementUnits[type].map((u) => (
@@ -251,7 +365,11 @@ function Home() {
 
             <select
               value={targetUnit}
-              onChange={(e) => setTargetUnit(e.target.value)}
+              onChange={(e) =>
+                setTargetUnit(
+                  e.target.value
+                )
+              }
               style={inputStyle}
             >
               {measurementUnits[type].map((u) => (
@@ -260,6 +378,7 @@ function Home() {
             </select>
           </div>
 
+          {/* RIGHT PANEL */}
           <div
             style={{
               background: "rgba(255,255,255,0.1)",
@@ -282,29 +401,43 @@ function Home() {
                 <>
                   <ActionButton
                     title="ADD"
-                    onClick={() => performOperation("add")}
+                    onClick={() =>
+                      performOperation("add")
+                    }
                   />
 
                   <ActionButton
                     title="SUBTRACT"
-                    onClick={() => performOperation("subtract")}
+                    onClick={() =>
+                      performOperation(
+                        "subtract"
+                      )
+                    }
                   />
 
                   <ActionButton
                     title="DIVIDE"
-                    onClick={() => performOperation("divide")}
+                    onClick={() =>
+                      performOperation(
+                        "divide"
+                      )
+                    }
                   />
                 </>
               )}
 
               <ActionButton
                 title="COMPARE"
-                onClick={() => performOperation("compare")}
+                onClick={() =>
+                  performOperation("compare")
+                }
               />
 
               <ActionButton
                 title="CONVERT"
-                onClick={() => performOperation("convert")}
+                onClick={() =>
+                  performOperation("convert")
+                }
               />
             </div>
 
@@ -317,7 +450,8 @@ function Home() {
                   marginBottom: "20px",
                 }}
               >
-                Temperature supports only Compare & Convert
+                Temperature supports only
+                Compare & Convert
               </div>
             )}
 
@@ -342,7 +476,10 @@ function Home() {
   )
 }
 
-function ActionButton({ title, onClick }) {
+function ActionButton({
+  title,
+  onClick,
+}) {
   return (
     <button
       onClick={onClick}
@@ -370,6 +507,7 @@ const inputStyle = {
   borderRadius: "10px",
   border: "none",
   fontSize: "16px",
+  outline: "none",
 }
 
 export default Home
