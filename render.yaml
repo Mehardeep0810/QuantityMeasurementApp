@@ -6,7 +6,7 @@ services:
     startCommand: "java -jar target/*.jar"
     plan: free
 
-  - type: static
+  - type: static_site
     name: quantitymeasurement-frontend
     rootDir: frontend
     buildCommand: "npm install && npm run build"
